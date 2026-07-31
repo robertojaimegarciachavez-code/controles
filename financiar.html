@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cápsulas Control • Edición Total & Gráfico Consolidado Interactivo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS, Chart.js & html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Pantalla de Bloqueo / Clave de Seguridad -->
+    <div id="pantalla-bloqueo" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
+                <i class="fa-solid fa-lock text-white text-base"></i>
+            </div>
+            <div>
+                <h2 class="font-bold text-base text-white">Acceso Protegido</h2>
+                <p id="txt-estado-clave" class="text-xs text-slate-400 mt-1">Ingresa tu contraseña para acceder al sistema</p>
+            </div>
+            <form id="form-login" onsubmit="verificarClave(event)" class="space-y-3">
+                <div class="relative">
+                    <input type="password" id="input-clave" required placeholder="Contraseña de seguridad" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500 text-center tracking-widest">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-xs transition shadow-sm">Desbloquear Aplicación</button>
+            </form>
+            <div class="pt-2 border-t border-slate-800/60 flex justify-between items-center text-[11px]">
+                <button type="button" onclick="cambiarClavePrompt()" class="text-indigo-400 hover:underline">Configurar Clave</button>
+                <span class="text-slate-600">Por defecto: <code class="text-slate-500">3267</code></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header Elegante & Minimalista -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-cube text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-semibold text-sm tracking-wide text-slate-200">Dispensadoras <span class="text-indigo-400 font-normal">OS</span></h1>
+                    <p class="text-[11px] text-slate-500">Haz clic en cualquier celda para editar textos</p>
+                </div>
+            </div>
+
+            <!-- Accesos Rápidos con 1 Clic -->
+            <div class="flex items-center gap-2">
+                <button onclick="abrirModalEjecutivo()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Resumen Flash
+                </button>
+                <button onclick="exportarExcel()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-400"></i> Excel Ejecutivo
+                </button>
+                
+                <!-- Menú Desplegable de Capturas -->
+                <div class="relative" id="contenedor-menu-captura">
+                    <button onclick="toggleMenuCaptura(event)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-camera"></i> Capturar <i class="fa-solid fa-chevron-down text-[9px] ml-0.5"></i>
+                    </button>
+                    <div id="menu-captura-opciones" class="absolute right-0 mt-1.5 bg-slate-900 border border-slate-700/80 rounded-xl py-1.5 shadow-2xl z-50 hidden w-64 space-y-0.5 text-xs">
+                        <button onclick="capturarVista('grafico')" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-300 flex items-center gap-2.5 transition">
+                            <i class="fa-solid fa-chart-column text-indigo-400"></i> Gráfica + Desglose de Locales
+                        </button>
+                        <button onclick="capturarVista('todo')" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-300 flex items-center gap-2.5 transition">
+                            <i class="fa-solid fa-desktop text-emerald-400"></i> Toda la Página
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="bloquearApp()" class="text-slate-400 hover:text-indigo-400 p-2 transition rounded-lg" title="Bloquear sesión">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                </button>
+                <button onclick="resetearDatosOriginales()" class="text-slate-500 hover:text-rose-400 p-2 transition rounded-lg" title="Limpiar todo">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pestañas Fluidas -->
+        <div class="max-w-7xl mx-auto px-6 flex gap-1 border-t border-slate-900 overflow-x-auto py-2">
+            <button onclick="cambiarTab('dashboard')" id="btn-tab-dashboard" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-indigo-400 border border-slate-800/60 transition flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard
+            </button>
+            <button onclick="cambiarTab('ventas')" id="btn-tab-ventas" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-cash-register"></i> Ventas
+            </button>
+            <button onclick="cambiarTab('compras')" id="btn-tab-compras" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-bag-shopping"></i> Compras
+            </button>
+            <button onclick="cambiarTab('locales')" id="btn-tab-locales" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-shop"></i> Locales
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main id="area-capturable" class="max-w-7xl mx-auto px-6 py-8 flex-grow w-full space-y-6">
+
+        <!-- ================= VISTA: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="space-y-6">
+            
+            <!-- KPIs Principales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition">
+                    <p class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Ventas Brutas</p>
+                    <h3 id="lbl-total-ventas" class="text-xl font-bold text-white mt-1.5">$0.00</h3>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up text-blue-400"></i> Acumulado general</div>
+                </div>
+
+                <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition">
+                    <p class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Comisiones (15%)</p>
+                    <h3 id="lbl-total-comisiones" class="text-xl font-bold text-amber-400 mt-1.5">$0.00</h3>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><i class="fa-solid fa-hand-holding-dollar text-amber-400"></i> Pagos a locales</div>
+                </div>
+
+                <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition">
+                    <p class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Ingreso Neto (+15%)</p>
+                    <h3 id="lbl-total-neto" class="text-xl font-bold text-emerald-400 mt-1.5">$0.00</h3>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><i class="fa-solid fa-circle-check text-emerald-400"></i> Bruto con ajuste</div>
+                </div>
+
+                <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition border-indigo-500/30">
+                    <p class="text-[10px] font-semibold tracking-wider text-cyan-300 uppercase">Ganancia Real (-$0.58)</p>
+                    <h3 id="lbl-ganancia-real" class="text-xl font-bold text-cyan-400 mt-1.5">$0.00</h3>
+                    <div class="mt-2 text-[10px] text-cyan-500/80 flex items-center gap-1"><i class="fa-solid fa-coins"></i> Margen estimado</div>
+                </div>
+
+                <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition">
+                    <p class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Inversión Compras</p>
+                    <h3 id="lbl-total-compras" class="text-xl font-bold text-rose-400 mt-1.5">$0.00</h3>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><i class="fa-solid fa-bag-shopping text-rose-400"></i> Gastos de inventario</div>
+                </div>
+            </div>
+
+            <!-- Barra de Filtros Minimalista -->
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span class="text-xs text-slate-400 font-medium"><i class="fa-solid fa-filter text-indigo-400 mr-1.5"></i> Filtrar por:</span>
+                    
+                    <!-- Filtro por Negocio -->
+                    <select id="filtro-negocio" onchange="actualizarDashboard()" class="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-indigo-500">
+                        <option value="todos">Todos los Negocios</option>
+                    </select>
+
+                    <!-- Filtro Múltiple de Años -->
+                    <div class="relative" id="contenedor-dropdown-anios">
+                        <button type="button" onclick="toggleDropdownAnios(event)" class="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3.5 py-1.5 outline-none focus:border-indigo-500 flex items-center gap-2 min-w-[150px] justify-between">
+                            <span id="texto-filtro-anios">Años (Todos)</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
+                        </button>
+                        <div id="dropdown-anios-menu" class="absolute left-0 mt-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-3 shadow-2xl z-50 hidden w-48 space-y-2">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px]">
+                                <span class="font-medium text-slate-300">Seleccionar Años</span>
+                                <button type="button" onclick="seleccionarTodosAnios(true)" class="text-indigo-400 hover:underline">Todos</button>
+                            </div>
+                            <div id="lista-checkboxes-anios" class="space-y-1.5 max-h-40 overflow-y-auto text-xs text-slate-300 pr-1">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Mes -->
+                    <select id="filtro-mes" onchange="actualizarDashboard()" class="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-indigo-500">
+                        <option value="todos">Todos los Meses</option>
+                        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+                        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+                        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+                        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                    </select>
+                </div>
+
+                <button onclick="toggleSeccionGrafico()" id="btn-toggle-grafico" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-3.5 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-indigo-400"></i> <span id="txt-btn-grafico">Mostrar Gráfica</span>
+                </button>
+            </div>
+
+            <!-- Bloque Capturable Ampliado: Gráfico Único Consolidado + Tabla de Desglose de Locales -->
+            <div id="bloque-captura-comparativa" class="space-y-6 bg-slate-950 p-2 rounded-2xl">
+                <!-- Gráfico (Oculto inicialmente hasta que el usuario decida mostrarlo) -->
+                <div id="contenedor-grafico-seccion" class="bg-slate-950 border border-slate-900 rounded-2xl p-5 hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Reporte Dinámico por Periodos <span class="text-indigo-400 font-normal ml-2">(Solo periodos con actividad comercial)</span></h2>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Se muestran exclusivamente las fechas donde existen ventas registradas</p>
+                        </div>
+                        <select id="filtro-grafico-metrica" onchange="actualizarDashboard()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500">
+                            <option value="bruto">Monto Venta Bruta</option>
+                            <option value="ganancia">Ganancia Real</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4 relative w-full h-[360px] flex items-center justify-center">
+                        <canvas id="chart-unico-consolidado"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla de Locales Estilizada con Fechas Completas -->
+                <div class="bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="p-5 border-b border-slate-900 flex justify-between items-center">
+                        <div>
+                            <h2 class="font-semibold text-sm text-white">Desglose por Local Comercial</h2>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Listado detallado con fechas completas (Día-Mes-Año)</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse" id="tabla-resumen-locales">
+                            <thead>
+                                <tr class="bg-slate-900/40 text-slate-400 text-[11px] font-medium uppercase tracking-wider border-b border-slate-900">
+                                    <th class="p-4">N°</th>
+                                    <th class="p-4">Local / Negocio</th>
+                                    <th class="p-4">Fecha</th>
+                                    <th class="p-4 text-right">Venta Total</th>
+                                    <th class="p-4 text-right">Comisión (15%)</th>
+                                    <th class="p-4 text-right">Ingreso Neto</th>
+                                    <th class="p-4 text-right">Ganancia Real</th>
+                                    <th class="p-4 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-900 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VISTA: VENTAS ================= -->
+        <section id="tab-ventas" class="space-y-6 hidden">
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl p-6">
+                <h2 class="font-semibold text-sm text-white mb-4"><i class="fa-solid fa-circle-plus text-indigo-400 mr-2"></i> Registrar Nueva Recaudación</h2>
+                <form id="form-venta" onsubmit="agregarVenta(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Local / Negocio</label>
+                        <select id="venta-local" required class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Fecha</label>
+                        <div class="relative">
+                            <input type="text" id="venta-mes" required readonly placeholder="Seleccionar fecha" onclick="toggleCalendarioPopup('popup-cal-venta')" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 cursor-pointer outline-none focus:border-indigo-500 pr-8">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-calendar-days text-indigo-400"></i>
+                            </div>
+                            <div id="popup-cal-venta" class="absolute left-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-2xl z-50 hidden w-64">
+                                <div class="flex justify-between items-center mb-2">
+                                    <button type="button" onclick="cambiarMesPopup(-1, 'venta')" class="text-slate-400 hover:text-white px-2 py-1 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <span id="mes-anio-venta" class="text-xs font-bold text-slate-200"></span>
+                                    <button type="button" onclick="cambiarMesPopup(1, 'venta')" class="text-slate-400 hover:text-white px-2 py-1 text-xs"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500 font-semibold mb-1">
+                                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                                </div>
+                                <div id="grid-dias-venta" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Monto Base ($)</label>
+                        <input type="number" step="0.01" id="venta-monto" required placeholder="150.00" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl text-xs transition shadow-sm">Guardar Venta</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-5 border-b border-slate-900 flex justify-between items-center">
+                    <h2 class="font-semibold text-sm text-white">Historial de Ventas Registradas</h2>
+                    <span id="contador-ventas" class="text-[10px] bg-slate-900 border border-slate-800 text-slate-400 px-2.5 py-1 rounded-lg"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla-ventas-detalle">
+                        <thead>
+                            <tr class="bg-slate-900/40 text-slate-400 text-[11px] font-medium uppercase tracking-wider border-b border-slate-900">
+                                <th class="p-4">N° Local</th>
+                                <th class="p-4">Local</th>
+                                <th class="p-4">Fecha</th>
+                                <th class="p-4 text-right">Monto Base</th>
+                                <th class="p-4 text-right">Comisión (15%)</th>
+                                <th class="p-4 text-right">Ingreso Neto</th>
+                                <th class="p-4 text-right">Ganancia Real</th>
+                                <th class="p-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-900 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VISTA: COMPRAS ================= -->
+        <section id="tab-compras" class="space-y-6 hidden">
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl p-6">
+                <h2 class="font-semibold text-sm text-white mb-4"><i class="fa-solid fa-bag-shopping text-indigo-400 mr-2"></i> Registrar Compra de Insumos</h2>
+                <form id="form-compra" onsubmit="agregarCompra(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Fecha</label>
+                        <div class="relative">
+                            <input type="text" id="compra-fecha" required readonly placeholder="Seleccionar fecha" onclick="toggleCalendarioPopup('popup-cal-compra')" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 cursor-pointer outline-none focus:border-indigo-500 pr-8">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-calendar-days text-indigo-400"></i>
+                            </div>
+                            <div id="popup-cal-compra" class="absolute left-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-2xl z-50 hidden w-64">
+                                <div class="flex justify-between items-center mb-2">
+                                    <button type="button" onclick="cambiarMesPopup(-1, 'compra')" class="text-slate-400 hover:text-white px-2 py-1 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <span id="mes-anio-compra" class="text-xs font-bold text-slate-200"></span>
+                                    <button type="button" onclick="cambiarMesPopup(1, 'compra')" class="text-slate-400 hover:text-white px-2 py-1 text-xs"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500 font-semibold mb-1">
+                                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                                </div>
+                                <div id="grid-dias-compra" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Descripción</label>
+                        <input type="text" id="compra-producto" required placeholder="Ej: 1000 Cápsulas de juguete" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Monto Total ($)</label>
+                        <input type="number" step="0.01" id="compra-total" required placeholder="314.00" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="sm:col-span-4 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-xs transition shadow-sm">Guardar Compra</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-5 border-b border-slate-900 flex justify-between items-center">
+                    <h2 class="font-semibold text-sm text-white">Historial de Inversiones</h2>
+                    <span id="contador-compras" class="text-[10px] bg-slate-900 border border-slate-800 text-slate-400 px-2.5 py-1 rounded-lg"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla-compras">
+                        <thead>
+                            <tr class="bg-slate-900/40 text-slate-400 text-[11px] font-medium uppercase tracking-wider border-b border-slate-900">
+                                <th class="p-4">Fecha</th>
+                                <th class="p-4">Descripción</th>
+                                <th class="p-4 text-right">Valor Total</th>
+                                <th class="p-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-900 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VISTA: LOCALES ================= -->
+        <section id="tab-locales" class="space-y-6 hidden">
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl p-6">
+                <h2 class="font-semibold text-sm text-white mb-4"><i class="fa-solid fa-shop text-indigo-400 mr-2"></i> Añadir Nuevo Local Comercial</h2>
+                <form id="form-local" onsubmit="agregarLocal(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Nombre del Local / Negocio</label>
+                        <input type="text" id="local-nombre" required placeholder="Ej: Supermercado Central" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl text-xs transition shadow-sm">Guardar Local</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-5 border-b border-slate-900 flex justify-between items-center">
+                    <h2 class="font-semibold text-sm text-white">Locales Registrados</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla-locales-lista">
+                        <thead>
+                            <tr class="bg-slate-900/40 text-slate-400 text-[11px] font-medium uppercase tracking-wider border-b border-slate-900">
+                                <th class="p-4">ID</th>
+                                <th class="p-4">Nombre del Local</th>
+                                <th class="p-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-900 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Recibo Digital Post-Venta (Actualizado con icono de pelotas/juguetes y sin textos innecesarios) -->
+    <div id="modal-recibo-digital" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md hidden p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-[320px] w-full p-5 shadow-2xl space-y-4 relative">
+            
+            <div id="recibo-imagen-target" class="bg-slate-900 p-2 rounded-xl space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <!-- Icono personalizado de pelotas plásticas con juguetes -->
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 via-indigo-500 to-amber-400 flex items-center justify-center shadow-lg shadow-pink-500/20">
+                            <i class="fa-solid fa-basketball text-white text-xs"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-xs text-white">Dispensadoras OS</h3>
+                        </div>
+                    </div>
+                    <span id="recibo-fecha-gen" class="text-[9px] font-mono text-slate-400 bg-slate-950 px-2 py-1 rounded-md border border-slate-800"></span>
+                </div>
+                
+                <div class="space-y-2.5 text-xs text-slate-300 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/80">
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Local / Negocio:</span> <span id="recibo-local" class="font-semibold text-white"></span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Fecha:</span> <span id="recibo-periodo" class="font-semibold text-indigo-400"></span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Monto Recaudado:</span> <span id="recibo-monto" class="font-semibold text-white"></span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Porcentaje (15%):</span> <span id="recibo-comision" class="font-semibold text-amber-400"></span></div>
+                    
+                    <div id="fila-recibo-ganancia" class="flex justify-between items-center border-t border-slate-800 pt-2.5">
+                        <span class="font-medium text-white">Ganancia Real:</span> 
+                        <span id="recibo-ganancia" class="font-bold text-emerald-400 text-sm"></span>
+                    </div>
+                </div>
+
+                <div id="control-ganancia-box" class="flex items-center justify-between pt-1 px-1 bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                    <span class="text-[10px] text-slate-400 font-medium">¿Incluir Ganancia?</span>
+                    <input type="checkbox" id="chk-mostrar-ganancia" checked onchange="toggleGananciaRecibo()" class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer w-4 h-4">
+                </div>
+
+                <div class="text-center pt-1">
+                    <p class="text-xs font-bold text-indigo-400 tracking-wide">¡¡Gracias!!</p>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="enviarReciboDirecto()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-share-nodes"></i> Enviar Directo
+                </button>
+                <button onclick="cerrarReciboDigital()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-xl transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ejecutivo (Resumen Flash) -->
+    <div id="modal-ejecutivo" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md hidden p-4">
+        <div id="comprobante-imagen-target" class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-[320px] w-full p-5 shadow-2xl space-y-4 relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-cube text-white text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-xs text-white">Dispensadoras OS</h3>
+                        <p class="text-[9px] text-slate-400">Resumen Financiero Flash</p>
+                    </div>
+                </div>
+                <span id="comp-fecha" class="text-[9px] font-mono text-slate-400 bg-slate-950 px-2 py-1 rounded-md border border-slate-800"></span>
+            </div>
+            
+            <div class="space-y-2.5 text-xs text-slate-300 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/60">
+                <div class="flex justify-between items-center"><span class="text-slate-400">Total Recaudado:</span> <span id="comp-bruto" class="font-semibold text-white"></span></div>
+                <div class="flex justify-between items-center"><span class="text-slate-400">Comisiones (15%):</span> <span id="comp-comision" class="font-semibold text-amber-400"></span></div>
+                <div class="flex justify-between items-center"><span class="text-slate-400">Ingreso Neto:</span> <span id="comp-neto" class="font-semibold text-emerald-400"></span></div>
+                <div class="flex justify-between items-center border-t border-slate-800 pt-2.5"><span class="font-medium text-white">Ganancia Real:</span> <span id="comp-ganancia" class="font-bold text-indigo-400 text-sm"></span></div>
+            </div>
+
+            <p class="text-[9px] text-center text-slate-500 italic">Reporte oficial generado automáticamente para WhatsApp.</p>
+        </div>
+
+        <div class="absolute bottom-6 flex gap-2 w-full max-w-[320px] px-4">
+            <button onclick="descargarComprobanteImagen()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                <i class="fa-solid fa-download"></i> Descargar Imagen (WS)
+            </button>
+            <button onclick="cerrarModalEjecutivo()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-xl transition">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal Confirmación -->
+    <div id="modal-confirmacion" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl text-center space-y-3">
+            <div class="w-10 h-10 bg-rose-500/10 text-rose-400 rounded-full flex items-center justify-center mx-auto text-sm">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-semibold text-sm text-white">¿Confirmar acción?</h3>
+            <div class="flex gap-2 pt-1">
+                <button onclick="cerrarModalEliminar()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-1.5 rounded-xl text-xs transition">Cancelar</button>
+                <button id="btn-confirmar-eliminar" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-1.5 rounded-xl text-xs transition">Sí, proceder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Completo Actualizado -->
+    <script>
+        if (!localStorage.getItem('app_password')) {
+            localStorage.setItem('app_password', '3267');
+        }
+
+        function verificarClave(e) {
+            e.preventDefault();
+            const input = document.getElementById('input-clave').value;
+            const passGuardada = localStorage.getItem('app_password');
+            const txtEstado = document.getElementById('txt-estado-clave');
+
+            if (input === passGuardada) {
+                document.getElementById('pantalla-bloqueo').classList.add('hidden');
+                document.getElementById('input-clave').value = '';
+                txtEstado.innerText = 'Ingresa tu contraseña para acceder al sistema';
+                txtEstado.className = 'text-xs text-slate-400 mt-1';
+            } else {
+                txtEstado.innerText = 'Contraseña incorrecta. Inténtalo de nuevo.';
+                txtEstado.className = 'text-xs text-rose-400 mt-1 font-medium';
+                document.getElementById('input-clave').value = '';
+                document.getElementById('input-clave').focus();
+            }
+        }
+
+        function bloquearApp() {
+            document.getElementById('pantalla-bloqueo').classList.remove('hidden');
+            document.getElementById('input-clave').focus();
+        }
+
+        function cambiarClavePrompt() {
+            let actual = prompt("Ingresa la contraseña actual:");
+            if (actual === null) return;
+            let passGuardada = localStorage.getItem('app_password');
+            if (actual === passGuardada) {
+                let nueva = prompt("Ingresa la nueva contraseña:");
+                if (nueva && nueva.trim() !== "") {
+                    localStorage.setItem('app_password', nueva.trim());
+                    alert("¡Contraseña actualizada con éxito!");
+                }
+            } else {
+                alert("Contraseña actual incorrecta.");
+            }
+        }
+
+        if (!localStorage.getItem('locales') || JSON.parse(localStorage.getItem('locales')).length === 0) {
+            localStorage.setItem('locales', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('compras')) {
+            localStorage.setItem('compras', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('ventas') || JSON.parse(localStorage.getItem('ventas')).length === 0) {
+            localStorage.setItem('ventas', JSON.stringify([]));
+        }
+
+        let chartUnicoInstance = null;
+        let calAnioActual = new Date().getFullYear();
+        let calMesActual = new Date().getMonth();
+        let calTipoActivo = '';
+
+        function cambiarTab(tabId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-indigo-400', 'border', 'border-slate-800/60');
+                btn.classList.add('text-slate-400', 'hover:text-slate-200');
+            });
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            activeBtn.classList.add('bg-slate-900', 'text-indigo-400', 'border', 'border-slate-800/60');
+            activeBtn.classList.remove('text-slate-400');
+
+            if(tabId === 'dashboard') actualizarDashboard();
+            if(tabId === 'compras') { renderCompras(); }
+            if(tabId === 'ventas') { renderVentas(); cargarSelectLocales(); }
+            if(tabId === 'locales') renderLocales();
+        }
+
+        function obtenerLocales() { return JSON.parse(localStorage.getItem('locales')); }
+        function obtenerCompras() { return JSON.parse(localStorage.getItem('compras')); }
+        function obtenerVentas() { return JSON.parse(localStorage.getItem('ventas')); }
+
+        function toggleDropdownAnios(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('dropdown-anios-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleMenuCaptura(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('menu-captura-opciones');
+            menu.classList.toggle('hidden');
+        }
+
+        window.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('contenedor-dropdown-anios');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('dropdown-anios-menu').classList.add('hidden');
+            }
+            const menuCap = document.getElementById('contenedor-menu-captura');
+            if (menuCap && !menuCap.contains(e.target)) {
+                document.getElementById('menu-captura-opciones').classList.add('hidden');
+            }
+            if (!e.target.closest('input[id$="fecha"], input[id$="mes"], [id^="popup-cal-"]')) {
+                document.querySelectorAll('[id^="popup-cal-"]').forEach(p => p.classList.add('hidden'));
+            }
+        });
+
+        function seleccionarTodosAnios(marcar) {
+            document.querySelectorAll('.chk-anio').forEach(chk => chk.checked = marcar);
+            actualizarDashboard();
+        }
+
+        function obtenerAniosSeleccionados() {
+            const checkboxes = document.querySelectorAll('.chk-anio:checked');
+            return Array.from(checkboxes).map(chk => chk.value);
+        }
+
+        function toggleCalendarioPopup(idPopup) {
+            const popup = document.getElementById(idPopup);
+            const isOpen = !popup.classList.contains('hidden');
+            
+            document.querySelectorAll('[id^="popup-cal-"]').forEach(p => p.classList.add('hidden'));
+
+            if (!isOpen) {
+                popup.classList.remove('hidden');
+                calTipoActivo = idPopup.includes('venta') ? 'venta' : 'compra';
+                renderizarCalendarioPopup();
+            }
+        }
+
+        function cambiarMesPopup(delta, tipo) {
+            calMesActual += delta;
+            if (calMesActual > 11) { calMesActual = 0; calAnioActual++; }
+            else if (calMesActual < 0) { calMesActual = 11; calAnioActual--; }
+            renderizarCalendarioPopup();
+        }
+
+        function renderizarCalendarioPopup() {
+            const mesesCompletos = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            
+            document.getElementById(`mes-anio-${calTipoActivo}`).innerText = `${mesesCompletos[calMesActual]} ${calAnioActual}`;
+            const grid = document.getElementById(`grid-dias-${calTipoActivo}`);
+            grid.innerHTML = '';
+
+            let primerDiaIndex = new Date(calAnioActual, calMesActual, 1).getDay();
+            primerDiaIndex = primerDiaIndex === 0 ? 6 : primerDiaIndex - 1;
+            let totalDias = new Date(calAnioActual, calMesActual + 1, 0).getDate();
+
+            for (let i = 0; i < primerDiaIndex; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+
+            for (let d = 1; d <= totalDias; d++) {
+                let dd = String(d).padStart(2, '0');
+                let mm = String(calMesActual + 1).padStart(2, '0');
+                let yy = calAnioActual;
+                let valorFormato = `${dd}-${mm}-${yy}`;
+                
+                grid.innerHTML += `<button type="button" onclick="seleccionarFechaPopup('${valorFormato}')" class="h-7 w-7 rounded-lg hover:bg-indigo-600 hover:text-white transition flex items-center justify-center text-slate-300 text-xs">${d}</button>`;
+            }
+        }
+
+        function seleccionarFechaPopup(val) {
+            document.getElementById(calTipoActivo === 'venta' ? 'venta-mes' : 'compra-fecha').value = val;
+            document.querySelectorAll('[id^="popup-cal-"]').forEach(p => p.classList.add('hidden'));
+        }
+
+        function hacerEditable(elemento, tipo, index, campo) {
+            if (elemento.querySelector('input')) return;
+            let valorActual = elemento.innerText.replace('$', '').replace('✎', '').trim();
+            elemento.innerHTML = `<input type="text" value="${valorActual}" autofocus class="bg-slate-900 border border-indigo-500 rounded px-2 py-0.5 text-xs text-white outline-none w-full" onblur="guardarEdicionDirecta(this, '${tipo}', ${index}, '${campo}')" onkeydown="if(event.key==='Enter') this.blur()">`;
+            elemento.querySelector('input').select();
+        }
+
+        function guardarEdicionDirecta(input, tipo, index, campo) {
+            let nuevoValor = input.value.trim();
+            if (tipo === 'local') {
+                let locales = obtenerLocales();
+                let nombreAnterior = locales[index].nombre;
+                
+                if (nuevoValor) {
+                    locales[index].nombre = nuevoValor;
+                    localStorage.setItem('locales', JSON.stringify(locales));
+
+                    let ventas = obtenerVentas();
+                    ventas.forEach(v => {
+                        if (v.local === nombreAnterior) {
+                            v.local = nuevoValor;
+                        }
+                    });
+                    localStorage.setItem('ventas', JSON.stringify(ventas));
+                }
+                renderLocales();
+                actualizarDashboard();
+            } else if (tipo === 'venta') {
+                let ventas = obtenerVentas();
+                if (campo === 'local') ventas[index].local = nuevoValor;
+                else if (campo === 'mes') ventas[index].mes = nuevoValor;
+                else if (campo === 'monto') ventas[index].monto = parseFloat(nuevoValor) || 0;
+                localStorage.setItem('ventas', JSON.stringify(ventas));
+                renderVentas();
+                actualizarDashboard();
+            } else if (tipo === 'compra') {
+                let compras = obtenerCompraciones();
+                if (campo === 'fecha') compras[index].fecha = nuevoValor;
+                else if (campo === 'producto') compras[index].producto = nuevoValor;
+                else if (campo === 'total') compras[index].total = parseFloat(nuevoValor) || 0;
+                localStorage.setItem('compras', JSON.stringify(compras));
+                renderCompras();
+            }
+        }
+
+        function obtenerCompraciones() { return JSON.parse(localStorage.getItem('compras')); }
+
+        function toggleSeccionGrafico() {
+            const contenedor = document.getElementById('contenedor-grafico-seccion');
+            const textoBtn = document.getElementById('txt-btn-grafico');
+            if (contenedor.classList.contains('hidden')) {
+                contenedor.classList.remove('hidden');
+                textoBtn.innerText = "Ocultar Gráfica";
+                actualizarDashboard();
+            } else {
+                contenedor.classList.add('hidden');
+                textoBtn.innerText = "Mostrar Gráfica";
+            }
+        }
+
+        function extraerAnio(str) {
+            if (!str) return '2026';
+            let partes = str.trim().split('-');
+            if (partes.length === 3) return partes[2];
+            if (partes.length === 2) return partes[1].length === 2 ? '20' + partes[1] : partes[1];
+            return '2026';
+        }
+
+        function extraerMes(str) {
+            if (!str) return '';
+            let partes = str.trim().split('-');
+            if (partes.length === 3) return partes[1];
+            if (partes.length === 2) return partes[0];
+            return '';
+        }
+
+        let callbackAccionEliminar = null;
+        function confirmarAccion(cb) { callbackAccionEliminar = cb; document.getElementById('modal-confirmacion').classList.remove('hidden'); }
+        function cerrarModalEliminar() { document.getElementById('modal-confirmacion').classList.add('hidden'); callbackAccionEliminar = null; }
+        document.getElementById('btn-confirmar-eliminar').onclick = () => { if(callbackAccionEliminar) callbackAccionEliminar(); cerrarModalEliminar(); };
+
+        function actualizarDashboard() {
+            const ventas = obtenerVentas(), compras = obtenerCompraciones(), locales = obtenerLocales();
+            const selectNegocio = document.getElementById('filtro-negocio');
+            const selectMes = document.getElementById('filtro-mes');
+            
+            const valNegocio = selectNegocio.value;
+            selectNegocio.innerHTML = '<option value="todos">Todos los Negocios</option>';
+            locales.forEach(l => {
+                selectNegocio.innerHTML += `<option value="${l.nombre}">${l.nombre}</option>`;
+            });
+            if ([...selectNegocio.options].some(o => o.value === valNegocio)) {
+                selectNegocio.value = valNegocio;
+            }
+
+            const aniosDisponibles = [...new Set(ventas.map(v => extraerAnio(v.mes)).concat(compras.map(c => extraerAnio(c.fecha))))].filter(Boolean).sort();
+            const aniosSeleccionadosPrevios = obtenerAniosSeleccionados();
+            
+            const listaCheckboxes = document.getElementById('lista-checkboxes-anios');
+            listaCheckboxes.innerHTML = '';
+            
+            aniosDisponibles.forEach(anio => {
+                const estaMarcado = aniosSeleccionadosPrevios.length === 0 || aniosSeleccionadosPrevios.includes(anio);
+                listaCheckboxes.innerHTML += `
+                    <label class="flex items-center gap-2 hover:bg-slate-800/60 p-1 rounded cursor-pointer">
+                        <input type="checkbox" value="${anio}" ${estaMarcado ? 'checked' : ''} onchange="actualizarDashboard()" class="chk-anio rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0">
+                        <span>${anio}</span>
+                    </label>
+                `;
+            });
+
+            const aniosSeleccionados = obtenerAniosSeleccionados();
+            const textoFiltroAnios = document.getElementById('texto-filtro-anios');
+            if (aniosSeleccionados.length === 0 || aniosSeleccionados.length === aniosDisponibles.length) {
+                textoFiltroAnios.innerText = "Años (Todos)";
+            } else if (aniosSeleccionados.length === 1) {
+                textoFiltroAnios.innerText = `Año: ${aniosSeleccionados[0]}`;
+            } else {
+                textoFiltroAnios.innerText = `${aniosSeleccionados.length} años seleccionados`;
+            }
+
+            const fNegocio = selectNegocio.value;
+            const fMes = selectMes.value;
+            
+            const ventasF = ventas.filter(v => 
+                (fNegocio === 'todos' || v.local === fNegocio) &&
+                (aniosSeleccionados.length === 0 || aniosSeleccionados.includes(extraerAnio(v.mes))) && 
+                (fMes === 'todos' || extraerMes(v.mes) === fMes)
+            );
+            const comprasF = compras.filter(c => 
+                (aniosSeleccionados.length === 0 || aniosSeleccionados.includes(extraerAnio(c.fecha))) && 
+                (fMes === 'todos' || extraerMes(c.fecha) === fMes)
+            );
+
+            let totalBruto = ventasF.reduce((acc, v) => acc + parseFloat(v.monto || 0), 0);
+            let totalComision = totalBruto * 0.15;
+            let ingresoNeto = totalBruto * 1.15;
+            let gananciaReal = ingresoNeto - (ingresoNeto * 0.58);
+            let totalCompras = comprasF.reduce((acc, c) => acc + parseFloat(c.total || 0), 0);
+
+            document.getElementById('lbl-total-ventas').innerText = `$${totalBruto.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('lbl-total-comisiones').innerText = `$${totalComision.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('lbl-total-neto').innerText = `$${ingresoNeto.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('lbl-ganancia-real').innerText = `$${gananciaReal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('lbl-total-compras').innerText = `$${totalCompras.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+            let tbody = document.querySelector('#tabla-resumen-locales tbody');
+            tbody.innerHTML = '';
+            
+            let ventasFiltradasTabla = ventas.map((v, indexOriginal) => ({ ...v, realIndex: indexOriginal })).filter(v => 
+                (fNegocio === 'todos' || v.local === fNegocio) &&
+                (aniosSeleccionados.length === 0 || aniosSeleccionados.includes(extraerAnio(v.mes))) && 
+                (fMes === 'todos' || extraerMes(v.mes) === fMes)
+            );
+
+            if (ventasFiltradasTabla.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-600 text-xs">Sin registros activos para este filtro.</td></tr>`;
+            } else {
+                ventasFiltradasTabla.forEach((item, idx) => {
+                    let bruto = parseFloat(item.monto || 0);
+                    let com = bruto * 0.15;
+                    let net = bruto * 1.15;
+                    let gan = net - (net * 0.58);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-900/60 transition">
+                            <td class="p-4 font-mono text-slate-500">${idx + 1}</td>
+                            <td class="p-4 font-medium text-slate-200">${item.local}</td>
+                            <td class="p-4 font-mono text-indigo-400">${item.mes || 'N/A'}</td>
+                            <td class="p-4 text-right text-slate-300">$${bruto.toFixed(2)}</td>
+                            <td class="p-4 text-right text-amber-400">$${com.toFixed(2)}</td>
+                            <td class="p-4 text-right font-medium text-emerald-400">$${net.toFixed(2)}</td>
+                            <td class="p-4 text-right font-medium text-cyan-400">$${gan.toFixed(2)}</td>
+                            <td class="p-4 text-center">
+                                <button onclick="confirmarAccion(() => eliminarVenta(${item.realIndex}))" class="text-slate-600 hover:text-rose-400 transition" title="Eliminar registro"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            if (!document.getElementById('contenedor-grafico-seccion').classList.contains('hidden')) {
+                actualizarGraficoUnicoConsolidado(locales, ventas, fNegocio, fMes, aniosSeleccionados);
+            }
+        }
+
+        function actualizarGraficoUnicoConsolidado(locales, ventasTotales, fNegocio, fMes, aniosSeleccionados) {
+            if (chartUnicoInstance) {
+                chartUnicoInstance.destroy();
+            }
+
+            const metrica = document.getElementById('filtro-grafico-metrica').value;
+            
+            let ventasFiltradasGrafico = ventasTotales.filter(v => 
+                (fNegocio === 'todos' || v.local === fNegocio) &&
+                (aniosSeleccionados.length === 0 || aniosSeleccionados.includes(extraerAnio(v.mes))) &&
+                (fMes === 'todos' || extraerMes(v.mes) === fMes) &&
+                parseFloat(v.monto || 0) > 0
+            );
+
+            let periodosSet = new Set();
+            ventasFiltradasGrafico.forEach(v => {
+                if (v.mes) {
+                    periodosSet.add(v.mes.trim());
+                }
+            });
+
+            let labels = Array.from(periodosSet).sort((a, b) => {
+                let partesA = a.split('-');
+                let partesB = b.split('-');
+                if(partesA.length === 3 && partesB.length === 3) {
+                    let fechaA = new Date(partesA[2], partesA[1] - 1, partesA[0]);
+                    let fechaB = new Date(partesB[2], partesB[1] - 1, partesB[0]);
+                    return fechaA - fechaB;
+                }
+                return a.localeCompare(b);
+            });
+
+            let dataValores = labels.map(periodo => {
+                let vPeriodo = ventasFiltradasGrafico.filter(v => v.mes && v.mes.trim().toLowerCase() === periodo.toLowerCase());
+                let bruto = vPeriodo.reduce((acc, v) => acc + parseFloat(v.monto || 0), 0);
+                if (metrica === 'ganancia') {
+                    let net = bruto * 1.15;
+                    return net - (net * 0.58);
+                }
+                return bruto;
+            });
+
+            Chart.register(ChartDataLabels);
+            const ctx = document.getElementById('chart-unico-consolidado').getContext('2d');
+
+            chartUnicoInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: fNegocio === 'todos' ? 'Total Consolidado' : fNegocio,
+                        data: dataValores,
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 11, family: 'Inter' },
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            boxPadding: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#94a3b8',
+                            font: { size: 10, weight: 'bold' },
+                            formatter: v => v > 0 ? '$' + v.toFixed(0) : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(30, 41, 59, 0.5)', borderDash: [4, 4] },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: value => '$' + value
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function capturarVista(tipo) {
+            document.getElementById('menu-captura-opciones').classList.add('hidden');
+            
+            if (tipo === 'grafico') {
+                const bloqueCaptura = document.getElementById('bloque-captura-comparativa');
+                const seccionGrafico = document.getElementById('contenedor-grafico-seccion');
+                const estabaOculto = seccionGrafico.classList.contains('hidden');
+                
+                if (estabaOculto) {
+                    seccionGrafico.classList.remove('hidden');
+                    actualizarDashboard();
+                }
+
+                setTimeout(() => {
+                    html2canvas(bloqueCaptura, { backgroundColor: '#020617', scale: 2, useCORS: true }).then(canvas => {
+                        if (estabaOculto) seccionGrafico.classList.add('hidden');
+                        let a = document.createElement('a');
+                        a.download = 'Comparativa_General_y_Datos.png';
+                        a.href = canvas.toDataURL('image/png');
+                        a.click();
+                    });
+                }, 150);
+
+            } else if (tipo === 'todo') {
+                const seccionGrafico = document.getElementById('contenedor-grafico-seccion');
+                const estabaOculto = seccionGrafico.classList.contains('hidden');
+
+                if (estabaOculto) {
+                    seccionGrafico.classList.remove('hidden');
+                    actualizarDashboard();
+                }
+
+                setTimeout(() => {
+                    html2canvas(document.getElementById('area-capturable'), { backgroundColor: '#020617', scale: 1.5, useCORS: true }).then(canvas => {
+                        if (estabaOculto) seccionGrafico.classList.add('hidden');
+                        let a = document.createElement('a');
+                        a.download = 'Dashboard_Completo_Dispensadoras.png';
+                        a.href = canvas.toDataURL('image/png');
+                        a.click();
+                    });
+                }, 150);
+            }
+        }
+
+        function abrirModalEjecutivo() {
+            const ventas = obtenerVentas();
+            let bruto = ventas.reduce((acc, v) => acc + parseFloat(v.monto || 0), 0);
+            let com = bruto * 0.15, net = bruto * 1.15, gan = net - (net * 0.58);
+            document.getElementById('comp-fecha').innerText = `Emisión: ${new Date().toLocaleDateString()}`;
+            document.getElementById('comp-bruto').innerText = `$${bruto.toFixed(2)}`;
+            document.getElementById('comp-comision').innerText = `$${com.toFixed(2)}`;
+            document.getElementById('comp-neto').innerText = `$${net.toFixed(2)}`;
+            document.getElementById('comp-ganancia').innerText = `$${gan.toFixed(2)}`;
+            document.getElementById('modal-ejecutivo').classList.remove('hidden');
+        }
+
+        function cerrarModalEjecutivo() { document.getElementById('modal-ejecutivo').classList.add('hidden'); }
+
+        function descargarComprobanteImagen() {
+            const target = document.getElementById('comprobante-imagen-target');
+            html2canvas(target, { backgroundColor: '#0f172a', scale: 3 }).then(canvas => {
+                let a = document.createElement('a');
+                a.download = 'Resumen_Flash_WhatsApp.png';
+                a.href = canvas.toDataURL('image/png');
+                a.click();
+            });
+        }
+
+        function mostrarReciboDigital(venta) {
+            let com = venta.monto * 0.15;
+            let net = venta.monto * 1.15;
+            let gan = net - (net * 0.58);
+
+            document.getElementById('recibo-fecha-gen').innerText = `Fecha: ${new Date().toLocaleDateString()}`;
+            document.getElementById('recibo-local').innerText = venta.local;
+            document.getElementById('recibo-periodo').innerText = venta.mes;
+            document.getElementById('recibo-monto').innerText = `$${parseFloat(venta.monto).toFixed(2)}`;
+            document.getElementById('recibo-comision').innerText = `$${com.toFixed(2)}`;
+            document.getElementById('recibo-ganancia').innerText = `$${gan.toFixed(2)}`;
+
+            document.getElementById('chk-mostrar-ganancia').checked = true;
+            document.getElementById('fila-recibo-ganancia').classList.remove('hidden');
+
+            document.getElementById('modal-recibo-digital').classList.remove('hidden');
+        }
+
+        function toggleGananciaRecibo() {
+            const mostrar = document.getElementById('chk-mostrar-ganancia').checked;
+            const filaGanancia = document.getElementById('fila-recibo-ganancia');
+            if (mostrar) {
+                filaGanancia.classList.remove('hidden');
+            } else {
+                filaGanancia.classList.add('hidden');
+            }
+        }
+
+        function cerrarReciboDigital() {
+            document.getElementById('modal-recibo-digital').classList.add('hidden');
+        }
+
+        // Envío directo utilizando Web Share API (WhatsApp, Correo, etc.) sin descarga previa
+        async function enviarReciboDirecto() {
+            const target = document.getElementById('recibo-imagen-target');
+            const controlBox = document.getElementById('control-ganancia-box');
+            controlBox.style.display = 'none';
+
+            try {
+                const canvas = await html2canvas(target, { backgroundColor: '#0f172a', scale: 3 });
+                controlBox.style.display = 'flex';
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], "Recibo_Digital.jpg", { type: "image/jpeg" });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: 'Recibo Digital - Dispensadoras OS',
+                                text: 'Adjunto comprobante oficial de recaudación.',
+                                files: [file]
+                            });
+                        } catch (err) {
+                            if (err.name !== 'AbortError') {
+                                console.log("Uso de alternativa por cancelación:", err);
+                            }
+                        }
+                    } else {
+                        let a = document.createElement('a');
+                        a.download = 'Recibo_Digital_WhatsApp.jpg';
+                        a.href = canvas.toDataURL('image/jpeg', 0.95);
+                        a.click();
+                    }
+                }, 'image/jpeg', 0.95);
+
+            } catch (error) {
+                controlBox.style.display = 'flex';
+                console.error("Error al generar imagen:", error);
+            }
+        }
+
+        function renderVentas() {
+            const ventas = obtenerVentas();
+            let tbody = document.querySelector('#tabla-ventas-detalle tbody');
+            tbody.innerHTML = '';
+            document.getElementById('contador-ventas').innerText = `${ventas.length} registros`;
+            if (ventas.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-600 text-xs">Sin registros de ventas.</td></tr>`; return; }
+            ventas.slice().reverse().forEach((v, idx) => {
+                let realIdx = ventas.length - 1 - idx;
+                let com = v.monto * 0.15, net = v.monto * 1.15, gan = net - (net * 0.58);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/60 transition">
+                        <td class="p-4 font-mono text-slate-500">${realIdx + 1}</td>
+                        <td class="p-4 font-medium text-slate-200 cursor-pointer hover:text-indigo-400" onclick="hacerEditable(this, 'venta', ${realIdx}, 'local')" title="Haz clic para editar">${v.local} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 font-mono text-indigo-400 cursor-pointer hover:text-indigo-300" onclick="hacerEditable(this, 'venta', ${realIdx}, 'mes')" title="Haz clic para editar">${v.mes} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-right text-slate-300 cursor-pointer hover:text-indigo-400" onclick="hacerEditable(this, 'venta', ${realIdx}, 'monto')" title="Haz clic para editar">$${parseFloat(v.monto).toFixed(2)} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-right text-amber-400">$${com.toFixed(2)}</td>
+                        <td class="p-4 text-right text-emerald-400">$${net.toFixed(2)}</td>
+                        <td class="p-4 text-right text-indigo-400">$${gan.toFixed(2)}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="mostrarReciboDigital(${JSON.stringify(v).replace(/"/g, '&quot;')})" class="text-indigo-400 hover:text-indigo-300 transition" title="Ver Recibo Digital"><i class="fa-solid fa-receipt"></i></button>
+                                <button onclick="confirmarAccion(() => eliminarVenta(${realIdx}))" class="text-slate-600 hover:text-rose-400 transition" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function agregarVenta(e) {
+            e.preventDefault();
+            let nuevaVenta = { 
+                local: document.getElementById('venta-local').value, 
+                mes: document.getElementById('venta-mes').value, 
+                monto: parseFloat(document.getElementById('venta-monto').value) 
+            };
+            let ventas = obtenerVentas();
+            ventas.push(nuevaVenta);
+            localStorage.setItem('ventas', JSON.stringify(ventas));
+            document.getElementById('form-venta').reset();
+            renderVentas();
+            
+            mostrarReciboDigital(nuevaVenta);
+        }
+
+        function eliminarVenta(i) { let v = obtenerVentas(); v.splice(i, 1); localStorage.setItem('ventas', JSON.stringify(v)); renderVentas(); actualizarDashboard(); }
+
+        function renderCompras() {
+            const compras = obtenerCompraciones();
+            let tbody = document.querySelector('#tabla-compras tbody');
+            tbody.innerHTML = '';
+            document.getElementById('contador-compras').innerText = `${compras.length} registros`;
+            if (compras.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-600 text-xs">Sin compras registradas.</td></tr>`; return; }
+            compras.slice().reverse().forEach((c, idx) => {
+                let realIdx = compras.length - 1 - idx;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/60 transition">
+                        <td class="p-4 font-mono text-indigo-400 cursor-pointer hover:text-indigo-300" onclick="hacerEditable(this, 'compra', ${realIdx}, 'fecha')" title="Haz clic para editar">${c.fecha} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-slate-200 cursor-pointer hover:text-indigo-400" onclick="hacerEditable(this, 'compra', ${realIdx}, 'producto')" title="Haz clic para editar">${c.producto} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-right text-rose-400 cursor-pointer hover:text-indigo-400" onclick="hacerEditable(this, 'compra', ${realIdx}, 'total')" title="Haz clic para editar">$${parseFloat(c.total).toFixed(2)} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-center"><button onclick="confirmarAccion(() => eliminarCompra(${realIdx}))" class="text-slate-600 hover:text-rose-400 transition"><i class="fa-solid fa-trash-can"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function agregarCompra(e) {
+            e.preventDefault();
+            let compras = obtenerCompraciones();
+            compras.push({ fecha: document.getElementById('compra-fecha').value, producto: document.getElementById('compra-producto').value, total: parseFloat(document.getElementById('compra-total').value) });
+            localStorage.setItem('compras', JSON.stringify(compras));
+            document.getElementById('form-compra').reset();
+            renderCompras();
+        }
+
+        function eliminarCompra(i) { let c = obtenerCompraciones(); c.splice(i, 1); localStorage.setItem('compras', JSON.stringify(c)); renderCompras(); }
+
+        function cargarSelectLocales() {
+            const locales = obtenerLocales(), select = document.getElementById('venta-local');
+            select.innerHTML = locales.length === 0 ? `<option value="">Agregue un local primero</option>` : '';
+            locales.forEach(l => select.innerHTML += `<option value="${l.nombre}">${l.nombre}</option>`);
+        }
+
+        function renderLocales() {
+            const locales = obtenerLocales();
+            let tbody = document.querySelector('#tabla-locales-lista tbody');
+            tbody.innerHTML = '';
+            if (locales.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-600 text-xs">No hay locales registrados.</td></tr>`; return; }
+            locales.forEach((l, idx) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/60 transition">
+                        <td class="p-4 font-mono text-slate-500">${l.id}</td>
+                        <td class="p-4 font-medium text-slate-200 cursor-pointer hover:text-indigo-400" onclick="hacerEditable(this, 'local', ${idx}, 'nombre')" title="Haz clic para editar">${l.nombre} <i class="fa-solid fa-pen text-[9px] opacity-40 ml-1"></i></td>
+                        <td class="p-4 text-center"><button onclick="confirmarAccion(() => eliminarLocal(${idx}))" class="text-slate-600 hover:text-rose-400 transition"><i class="fa-solid fa-trash-can"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function agregarLocal(e) {
+            e.preventDefault();
+            let locales = obtenerLocales();
+            let id = locales.length > 0 ? locales[locales.length - 1].id + 1 : 1;
+            locales.push({ id, nombre: document.getElementById('local-nombre').value });
+            localStorage.setItem('locales', JSON.stringify(locales));
+            document.getElementById('form-local').reset();
+            renderLocales();
+        }
+
+        function eliminarLocal(i) { let l = obtenerLocales(); l.splice(i, 1); localStorage.setItem('locales', JSON.stringify(l)); renderLocales(); }
+
+        function resetearDatosOriginales() {
+            confirmarAccion(() => {
+                localStorage.setItem('locales', JSON.stringify([]));
+                localStorage.setItem('compras', JSON.stringify([]));
+                localStorage.setItem('ventas', JSON.stringify([]));
+                actualizarDashboard();
+            });
+        }
+
+        function exportarExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            const ventasData = obtenerVentas().map(v => {
+                let montoBase = parseFloat(v.monto || 0);
+                let comision = montoBase * 0.15;
+                let ingresoNeto = montoBase * 1.15;
+                let gananciaReal = ingresoNeto - (ingresoNeto * 0.58);
+                return {
+                    "Local Comercial": v.local,
+                    "Fecha": v.mes,
+                    "Monto Base ($)": montoBase,
+                    "Comisión Local (15%)": comision,
+                    "Ingreso Neto ($)": ingresoNeto,
+                    "Ganancia Real Estimada ($)": gananciaReal
+                };
+            });
+            const wsVentas = XLSX.utils.json_to_sheet(ventasData);
+            wsVentas['!cols'] = [{wch: 25}, {wch: 18}, {wch: 18}, {wch: 20}, {wch: 18}, {wch: 25}];
+
+            const comprasData = obtenerCompraciones().map(c => ({
+                "Fecha": c.fecha,
+                "Descripción del Insumo": c.producto,
+                "Valor Total ($)": parseFloat(c.total || 0)
+            }));
+            const wsCompras = XLSX.utils.json_to_sheet(comprasData);
+            wsCompras['!cols'] = [{wch: 18}, {wch: 35}, {wch: 18}];
+
+            const localesData = obtenerLocales().map(l => ({
+                "ID": l.id,
+                "Nombre del Local": l.nombre
+            }));
+            const wsLocales = XLSX.utils.json_to_sheet(localesData);
+            wsLocales['!cols'] = [{wch: 10}, {wch: 25}];
+
+            XLSX.utils.book_append_sheet(wb, wsVentas, "Reporte Ventas");
+            XLSX.utils.book_append_sheet(wb, wsCompras, "Control Compras");
+            XLSX.utils.book_append_sheet(wb, wsLocales, "Locales Registrados");
+            
+            XLSX.writeFile(wb, "Reporte_Ejecutivo_Dispensadoras.xlsx");
+        }
+
+        window.onload = () => { 
+            actualizarDashboard();
+            document.getElementById('input-clave').focus();
+        };
+    </script>
+</body>
+</html>
