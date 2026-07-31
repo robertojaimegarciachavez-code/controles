@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal - Mis Controles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .menu-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 16px 20px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .menu-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .menu-btn.finanzas {
+            background-color: #28a745;
+        }
+        .menu-btn.finanzas:hover {
+            background-color: #1e7e34;
+        }
+        .menu-btn.financiar {
+            background-color: #17a2b8;
+        }
+        .menu-btn.financiar:hover {
+            background-color: #117a8b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Panel de Control Principal</h1>
+
+    <div class="menu-container">
+        <!-- Botón 1: Dispensadoras -->
+        <a href="dispensadoras.html" class="menu-btn">📦 Control de Dispensadoras</a>
+        
+        <!-- Botón 2: Finanzas -->
+        <a href="finanzas.html" class="menu-btn finanzas">📊 Control de Índice Financiero</a>
+
+        <!-- Botón 3: Financiar -->
+        <a href="financiar.html" class="menu-btn financiar">💳 Módulo Financiar</a>
+    </div>
+
+</body>
+</html>
