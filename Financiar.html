@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Préstamos - Salazarr&asociados</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body, input, button, select, table, th, td, h1, h2, h3, h4, p, span, strong {
+            font-family: 'Inter', sans-serif !important;
+            letter-spacing: normal !important;
+            text-align: center;
+        }
+        .text-left-forced { text-align: left !important; }
+        .text-right-forced { text-align: right !important; }
+        .text-center-forced { text-align: center !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col selection:bg-slate-500 selection:text-slate-950">
+
+    <!-- HEADER / NAVEGACIÓN -->
+    <header class="bg-slate-900/95 backdrop-blur-md text-white shadow-xl sticky top-0 z-50 border-b border-slate-700/40">
+        <div class="max-w-7xl mx-auto px-2 py-2.5 flex flex-col md:flex-row justify-between items-center gap-2">
+            <div class="flex items-center justify-center gap-2 w-full md:w-auto">
+                <div class="bg-gradient-to-br from-slate-700/30 to-slate-800/20 text-slate-300 p-2 rounded-lg text-base shadow-inner border border-slate-600/40">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-200">Salazarr&asociados</h1>
+                    <p class="text-[9px] uppercase text-slate-400 font-medium">Gestión de Crédito</p>
+                </div>
+            </div>
+            <!-- Navegación por pestañas compacta para móvil -->
+            <nav class="flex flex-wrap justify-center gap-1 bg-slate-950/80 p-1 rounded-xl text-xs border border-slate-800/80 shadow-inner w-full md:w-auto overflow-x-auto">
+                <button onclick="cambiarTab('dashboard')" id="btn-dashboard" class="px-2.5 py-1.5 rounded-lg font-medium transition-all bg-slate-200 text-slate-950 font-bold shadow-md text-xs">
+                    <i class="fa-solid fa-chart-pie mr-1"></i> Panel
+                </button>
+                <button onclick="cambiarTab('prestamos')" id="btn-prestamos" class="px-2.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-900 text-xs">
+                    <i class="fa-solid fa-file-invoice-dollar mr-1"></i> Clientes
+                </button>
+                <button onclick="cambiarTab('clientes')" id="btn-clientes" class="px-2.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-900 text-xs">
+                    <i class="fa-solid fa-address-book mr-1"></i> Historial
+                </button>
+                <button onclick="cambiarTab('nuevo')" id="btn-nuevo" class="px-2.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-900 text-xs">
+                    <i class="fa-solid fa-calculator mr-1"></i> Cotizar
+                </button>
+                <button onclick="cambiarTab('pagos')" id="btn-pagos" class="px-2.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-900 text-xs">
+                    <i class="fa-solid fa-receipt mr-1"></i> Pagos
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-2 py-4 flex-grow w-full space-y-4">
+
+        <!-- 1. PANEL DE CONTROL -->
+        <section id="tab-dashboard" class="space-y-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div class="bg-slate-900/80 backdrop-blur p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center">
+                    <div class="bg-slate-800 text-slate-300 p-2 rounded-lg text-sm border border-slate-700 mb-1"><i class="fa-solid fa-wallet"></i></div>
+                    <p class="text-[10px] font-semibold uppercase text-slate-400">Capital Colocado</p>
+                    <h3 id="dash-capital-calle" class="text-lg font-bold text-slate-200 mt-0.5">$0.00</h3>
+                </div>
+                <div class="bg-slate-900/80 backdrop-blur p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center">
+                    <div class="bg-slate-800 text-emerald-400 p-2 rounded-lg text-sm border border-slate-700 mb-1"><i class="fa-solid fa-chart-line"></i></div>
+                    <p class="text-[10px] font-semibold uppercase text-slate-400">Intereses Cobrados</p>
+                    <h3 id="dash-intereses-cobrados" class="text-lg font-bold text-emerald-400 mt-0.5">$0.00</h3>
+                </div>
+                <div class="bg-slate-900/80 backdrop-blur p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center">
+                    <div class="bg-slate-800 text-slate-300 p-2 rounded-lg text-sm border border-slate-700 mb-1"><i class="fa-solid fa-users"></i></div>
+                    <p class="text-[10px] font-semibold uppercase text-slate-400">Préstamos Activos</p>
+                    <h3 id="dash-prestamos-activos" class="text-lg font-bold text-slate-100 mt-0.5">0</h3>
+                </div>
+                <div class="bg-slate-900/80 backdrop-blur p-3 rounded-xl shadow-lg border border-slate-800 flex flex-col items-center justify-center">
+                    <div class="bg-rose-500/10 text-rose-500 p-2 rounded-lg text-sm border border-rose-500/20 mb-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <p class="text-[10px] font-semibold uppercase text-slate-400">Vencidos (5 días)</p>
+                    <h3 id="dash-cuotas-vencidas" class="text-lg font-bold text-rose-500 mt-0.5">0</h3>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            <div class="bg-slate-900/80 backdrop-blur rounded-xl shadow-lg border border-slate-800 p-3.5">
+                <div class="flex justify-center items-center mb-3">
+                    <h2 class="text-xs font-bold uppercase text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-bell text-slate-300"></i> Alertas del Sistema
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <th class="p-2 rounded-l-lg text-center">Cliente</th>
+                                <th class="p-2 text-center">ID</th>
+                                <th class="p-2 text-center">Vencimiento</th>
+                                <th class="p-2 text-center">Cuota / Saldo</th>
+                                <th class="p-2 text-center">Estado</th>
+                                <th class="p-2 rounded-r-lg text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-alertas" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. CARTERA DE PRÉSTAMOS (CLIENTES) -->
+        <section id="tab-prestamos" class="hidden space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur rounded-xl shadow-lg border border-slate-800 p-3.5">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase text-slate-200">Préstamos Activos</h2>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center justify-center w-full sm:w-auto">
+                        <input type="text" id="buscador-cartera" onkeyup="filtrarCartera()" placeholder="Buscar cliente o ID..." class="px-3 py-1.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-slate-500 w-full sm:w-48 shadow-inner text-center">
+                        <button onclick="cambiarTab('nuevo')" class="bg-slate-200 hover:bg-white text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-md w-full sm:w-auto">
+                            <i class="fa-solid fa-plus"></i> Nuevo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <th class="p-2 rounded-l-lg w-8 text-center">N°</th>
+                                <th class="p-2 text-center">ID / CLIENTE</th>
+                                <th class="p-2 text-center">Inicio</th>
+                                <th class="p-2 text-center">Plazo</th>
+                                <th class="p-2 text-center">Tasa</th>
+                                <th class="p-2 text-center">Orig.</th>
+                                <th class="p-2 text-center">Amort.</th>
+                                <th class="p-2 text-center">Int.</th>
+                                <th class="p-2 text-center">Saldo</th>
+                                <th class="p-2 rounded-r-lg text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cartera" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. HISTORIAL DE CLIENTES Y ESTADO DE CUENTA -->
+        <section id="tab-clientes" class="hidden space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur rounded-xl shadow-lg border border-slate-800 p-3.5">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+                    <div class="text-center sm:text-left">
+                        <h2 class="text-xs font-bold uppercase text-slate-200 flex items-center justify-center sm:justify-start gap-1.5">
+                            <i class="fa-solid fa-address-book text-slate-300"></i> Historial Clientes
+                        </h2>
+                        <p class="text-[10px] text-slate-400">Selecciona un cliente para ver su expediente.</p>
+                    </div>
+                    <div class="w-full sm:w-auto flex justify-center">
+                        <select id="select-cliente-historial" onchange="cargarEstadoCuentaCliente()" class="px-3 py-1.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-slate-500 w-full sm:w-64 shadow-inner text-center">
+                            <option value="">-- Seleccione un cliente --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="contenedor-estado-cuenta" class="hidden space-y-4 border-t border-slate-800 pt-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800 shadow-inner items-center">
+                        <div class="text-center">
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Cliente</p>
+                            <h3 id="ec-nombre" class="font-bold text-slate-100 text-xs mt-0.5">--</h3>
+                            <p id="ec-telefono" class="text-[10px] text-slate-400">--</p>
+                            <p id="ec-direccion" class="text-[10px] text-slate-400">--</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Condiciones</p>
+                            <p class="text-[10px] text-slate-300 mt-0.5">ID: <strong id="ec-id" class="text-slate-100">--</strong></p>
+                            <p class="text-[10px] text-slate-300">Monto: <strong id="ec-monto" class="text-slate-100">--</strong></p>
+                            <p class="text-[10px] text-slate-300">Tasa: <strong id="ec-tasa" class="text-slate-200">--</strong></p>
+                        </div>
+                        <div class="flex flex-col justify-center items-center">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold text-center">Saldo Pendiente</p>
+                                <h3 id="ec-saldo" class="font-bold text-slate-200 text-lg text-center mt-0.5">--</h3>
+                            </div>
+                            <button onclick="enviarEstadoCuentaPorPlataformas()" class="mt-2 bg-slate-200 hover:bg-white text-slate-950 px-3 py-1.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-md">
+                                <i class="fa-solid fa-share-nodes"></i> ENVIAR / COMPARTIR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor oculto para captura -->
+                    <div id="captura-estado-cuenta-container" style="position: absolute; left: -9999px; top: -9999px;">
+                        <div class="bg-white text-slate-900 border border-slate-300 rounded-xl p-4 shadow-2xl w-[800px]">
+                            <div class="border-b border-slate-200 pb-3 mb-3 flex flex-col items-center justify-center gap-1.5 text-center">
+                                <div class="text-slate-700 text-2xl p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                </div>
+                                <h2 class="text-xs text-slate-900 font-bold text-center">Salazarr&asociados</h2>
+                                <span class="text-[10px] text-slate-500 font-semibold uppercase">Estado de Cuenta Oficial</span>
+                            </div>
+                            <div class="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col items-center">
+                                <div class="space-y-1 text-slate-800 font-medium text-[11px] w-full max-w-md text-left">
+                                    <p id="ec-img-titulo-cliente" class="text-left"><strong>Cliente:</strong> </p>
+                                    <p id="ec-img-sub-monto" class="text-left"><strong>Monto:</strong> </p>
+                                    <p id="ec-img-tasa-inline" class="text-left"><strong>Tasa de Interés:</strong> </p>
+                                    <p id="ec-img-cuota-fija-inline" class="text-left"><strong>Cuota Mensual Fija:</strong> </p>
+                                    <p id="ec-img-saldo-inline" class="text-left"><strong>Saldo Pendiente:</strong> </p>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-center border-collapse text-[11px]">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase text-[9px] border-b border-slate-200">
+                                            <th class="p-2 rounded-l-md text-center">Cuota</th>
+                                            <th class="p-2 text-center">Fecha / Pago</th>
+                                            <th class="p-2 text-center">Cuota Fija</th>
+                                            <th class="p-2 text-center">INTERES MENSUAL</th>
+                                            <th class="p-2 text-center">Abono a Capital</th>
+                                            <th class="p-2 text-center">Nuevo Saldo</th>
+                                            <th class="p-2 rounded-r-md text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ec-tabla-amortizacion-imagen" class="divide-y divide-slate-100 text-slate-800"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-[11px] uppercase text-slate-300 mb-2 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-receipt text-slate-300"></i> Historial de Pagos
+                        </h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-center border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                        <th class="p-2 rounded-l-lg text-center">ID Tx</th>
+                                        <th class="p-2 text-center">Fecha</th>
+                                        <th class="p-2 text-center">Tipo</th>
+                                        <th class="p-2 text-center">Recibido</th>
+                                        <th class="p-2 text-center">Interés</th>
+                                        <th class="p-2 text-center">Capital</th>
+                                        <th class="p-2 text-center">Saldo</th>
+                                        <th class="p-2 rounded-r-lg text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-pagos-cliente" class="divide-y divide-slate-800/60 text-slate-300">
+                                    <!-- Inyectado por JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vacio-estado-cuenta" class="p-8 text-center text-slate-500 italic text-xs">
+                    Seleccione un cliente arriba para visualizar su estado de cuenta.
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. COTIZADOR Y ESTRUCTURA PREVIA -->
+        <section id="tab-nuevo" class="hidden space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur rounded-xl shadow-lg border border-slate-800 p-3.5 max-w-6xl mx-auto">
+                <div class="border-b border-slate-800 pb-3 mb-4">
+                    <h2 class="text-xs font-bold uppercase text-slate-200 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-calculator text-slate-300"></i> Cotizador y Estructura de Crédito
+                    </h2>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Formulario -->
+                    <div class="space-y-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800 h-fit shadow-inner text-xs">
+                        <h3 class="font-semibold text-slate-200 border-b border-slate-800/80 pb-1.5 uppercase flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-user text-slate-300"></i> Datos del Cliente
+                        </h3>
+                        <div>
+                            <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Nombre Completo *</label>
+                            <input type="text" id="nuevo-cliente" value="" placeholder="Ej. Pedro Geron" oninput="calcularPrevia()" class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Teléfono / WS</label>
+                                <input type="text" id="nuevo-telefono" placeholder="+503 7000-0000" class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Fecha Inicio *</label>
+                                <input type="date" id="nuevo-fecha" onchange="calcularPrevia()" class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Dirección</label>
+                            <input type="text" id="nuevo-direccion" placeholder="Calle, Colonia, Casa N°" class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Fiador / Documentos</label>
+                            <div class="flex gap-1.5 items-center justify-center">
+                                <input type="text" id="nuevo-garantia" placeholder="Ej. Prenda" class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                                <label title="Adjuntar documentos" class="cursor-pointer bg-slate-900 hover:bg-slate-800 text-slate-300 px-2.5 py-2 rounded-lg text-xs flex items-center justify-center transition border border-slate-800">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                    <input type="file" id="nuevo-documentos" multiple onchange="mostrarArchivosSeleccionados()" class="hidden">
+                                </label>
+                            </div>
+                            <div id="lista-archivos-adjuntos" class="text-[10px] text-slate-400 mt-1 italic text-center">Ningún documento adjunto</div>
+                        </div>
+
+                        <h3 class="font-semibold text-slate-200 border-b border-slate-800/80 pb-1.5 uppercase pt-1 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-coins text-slate-300"></i> Condiciones (USD)
+                        </h3>
+                        <div>
+                            <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Monto Original ($) *</label>
+                            <input type="number" id="nuevo-monto" value="" min="1" step="0.01" oninput="calcularPrevia()" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold text-slate-100 focus:ring-2 focus:ring-slate-500 focus:outline-none text-center" placeholder="0.00">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Tasa Mensual (%) *</label>
+                                <input type="number" id="nuevo-tasa" value="" min="0.1" max="10" step="0.01" oninput="calcularPrevia()" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center" placeholder="0.0">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Plazo (Meses) *</label>
+                                <input type="number" id="nuevo-plazo" value="" min="1" max="120" oninput="calcularPrevia()" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 space-y-2">
+                            <button onclick="enviarImagenPorPlataformas()" class="w-full bg-slate-200 hover:bg-white text-slate-950 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+                                <i class="fa-solid fa-share-nodes"></i> Enviar Estructura Imagen
+                            </button>
+                            <button onclick="guardarNuevoPrestamo()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-100 py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-md border border-slate-700">
+                                <i class="fa-solid fa-check-circle text-slate-300"></i> Aprobar y Crear Préstamo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor Tabla Previa -->
+                    <div class="lg:col-span-2 bg-white text-slate-900 border border-slate-300 rounded-xl p-4 shadow-xl flex flex-col justify-between text-xs" id="captura-tabla-container">
+                        <div>
+                            <div class="border-b border-slate-200 pb-3 mb-3 flex flex-col items-center justify-center gap-1.5 text-center">
+                                <div class="text-slate-700 text-2xl p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                </div>
+                                <h2 class="text-xs text-slate-900 font-bold text-center">Salazarr&asociados</h2>
+                                <span class="text-[10px] text-slate-500 font-semibold uppercase">Estructura de Crédito Oficial</span>
+                            </div>
+
+                            <div class="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col items-center">
+                                <div class="space-y-1 text-slate-800 font-medium text-[11px] w-full max-w-md text-left">
+                                    <p id="img-titulo-cliente" class="text-left"><strong>Cliente:</strong> </p>
+                                    <p id="img-sub-monto" class="text-left"><strong>Monto:</strong> </p>
+                                    <p id="img-tasa-inline" class="text-left"><strong>Tasa de Interés:</strong> </p>
+                                    <p id="img-cuota-fija-inline" class="text-left"><strong>Cuota Mensual Fija:</strong> </p>
+                                    <p id="img-total-intereses-inline" class="text-left"><strong>Total Intereses:</strong> </p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-center border-collapse text-[11px]">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase text-[9px] border-b border-slate-200">
+                                            <th class="p-2 rounded-l-md text-center">Cuota</th>
+                                            <th class="p-2 text-center">Fecha / Pago</th>
+                                            <th class="p-2 text-center">Cuota Fija</th>
+                                            <th class="p-2 text-center">INTERES MENSUAL</th>
+                                            <th class="p-2 text-center">Abono a Capital</th>
+                                            <th class="p-2 rounded-r-md text-center">Nuevo Saldo:</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-amortizacion-previa" class="divide-y divide-slate-100 text-slate-800">
+                                        <!-- Inyectado por JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-2 border-t border-slate-200 text-[10px] text-slate-500 flex justify-between">
+                            <span class="font-bold text-slate-800">Salazarr&asociados</span>
+                            <span>Estructura de Crédito Oficial</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. HISTORIAL DE PAGOS GENERAL -->
+        <section id="tab-pagos" class="hidden space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur rounded-xl shadow-lg border border-slate-800 p-3.5">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+                    <div class="text-center sm:text-left">
+                        <h2 class="text-xs font-bold uppercase text-slate-200">Historial General de Pagos</h2>
+                        <p class="text-[10px] text-slate-400">Registro detallado de transacciones y respaldos.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-center w-full sm:w-auto">
+                        <button onclick="exportarExcelEjecutivo()" class="bg-slate-950 hover:bg-slate-800 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 border border-slate-800 shadow-inner">
+                            <i class="fa-solid fa-file-excel text-emerald-400"></i> Excel
+                        </button>
+                        <button onclick="exportarPdfEjecutivo()" class="bg-slate-950 hover:bg-slate-800 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 border border-slate-800 shadow-inner">
+                            <i class="fa-solid fa-file-pdf text-rose-500"></i> PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <th class="p-2 rounded-l-lg text-center">ID Tx</th>
+                                <th class="p-2 text-center">ID Préstamo</th>
+                                <th class="p-2 text-center">Cliente</th>
+                                <th class="p-2 text-center">Fecha</th>
+                                <th class="p-2 text-center">Recibido</th>
+                                <th class="p-2 text-center">Interés</th>
+                                <th class="p-2 text-center">Capital</th>
+                                <th class="p-2 rounded-r-lg text-center">Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-historial-pagos" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE REALIZAR PAGO / ABONO -->
+    <div id="modal-pago" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
+        <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-sm w-full p-4 space-y-3 text-slate-100 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-xs uppercase text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cash-register text-slate-300"></i> Registrar Pago / Abono
+                </h3>
+                <button onclick="cerrarModalPago()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            <input type="hidden" id="pago-prestamo-id">
+
+            <div class="bg-slate-950 p-3 rounded-lg space-y-1.5 border border-slate-800 shadow-inner">
+                <div class="flex justify-between"><span class="text-slate-400">Cliente:</span> <strong id="modal-cliente" class="text-slate-100"></strong></div>
+                <div class="flex justify-between"><span class="text-slate-400">Saldo Actual:</span> <strong id="modal-saldo" class="text-slate-200"></strong></div>
+                <div class="flex justify-between"><span class="text-slate-400">Cuota Mensual:</span> <strong id="modal-cuota-normal" class="text-slate-100"></strong></div>
+                <div class="flex justify-between"><span class="text-slate-400">Días Retraso:</span> <strong id="modal-dias-retraso" class="text-rose-500">0 días</strong></div>
+                <div class="flex justify-between border-t border-slate-800 pt-1"><span class="text-slate-400">Interés Moratorio:</span> <strong id="modal-mora-monto" class="text-rose-500">$0.00</strong></div>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Fecha del Pago *</label>
+                    <input type="date" id="pago-fecha" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Monto Total Recibido ($) *</label>
+                    <input type="number" id="pago-monto-recibido" step="0.01" oninput="simularDesglosePago()" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs font-semibold text-slate-200 focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                </div>
+
+                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-lg space-y-1.5 shadow-inner">
+                    <p class="font-bold text-slate-300 uppercase mb-1 text-[10px] text-center">Desglose Automático:</p>
+                    <div class="flex justify-between"><span class="text-slate-400">Abono Mora:</span> <span id="desglose-mora" class="font-bold text-slate-200">$0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Interés Ordinario:</span> <span id="desglose-interes" class="font-bold text-slate-200">$0.00</span></div>
+                    <div class="flex justify-between border-t border-slate-800 pt-1"><span class="text-slate-400">Abono Capital:</span> <span id="desglose-capital" class="font-bold text-emerald-400">$0.00</span></div>
+                    <div class="flex justify-between text-slate-400 pt-0.5"><span>Nuevo Saldo:</span> <span id="desglose-nuevo-saldo" class="font-bold text-slate-100">$0.00</span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+                <button onclick="cerrarModalPago()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg font-semibold text-xs transition border border-slate-700">Cancelar</button>
+                <button onclick="ejecutarPago()" class="w-1/2 bg-slate-200 hover:bg-white text-slate-950 py-2 rounded-lg font-bold text-xs transition shadow-md">Procesar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RECIBO DIGITAL -->
+    <div id="modal-recibo" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
+        <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-xs w-full p-4 space-y-3">
+            <div id="recibo-printable" class="bg-white p-4 rounded-xl border border-slate-300 text-slate-900 space-y-3 shadow-lg">
+                <div class="border-b border-slate-200 pb-3 mb-2 flex items-center gap-2.5 text-left">
+                    <div class="text-slate-700 text-xl p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xs text-slate-900 font-bold">Salazarr&asociados</h2>
+                        <p class="text-[9px] text-slate-500 font-semibold uppercase">Comprobante Oficial</p>
+                    </div>
+                </div>
+                <div class="text-[11px] space-y-1 text-slate-800 text-center">
+                    <div class="flex justify-between"><span>ID Tx:</span> <span id="rec-id-tx" class="font-bold"></span></div>
+                    <div class="flex justify-between"><span>Préstamo:</span> <span id="rec-id-prestamo" class="font-bold"></span></div>
+                    <div class="flex justify-between"><span>Fecha:</span> <span id="rec-fecha"></span></div>
+                    <div class="flex justify-between"><span>Cliente:</span> <span id="rec-cliente" class="font-bold"></span></div>
+                </div>
+                <hr class="border-dashed border-slate-300">
+                <div class="text-[11px] space-y-1.5 text-slate-800 text-center">
+                    <div class="flex justify-between"><span>Tipo:</span> <span id="rec-tipo" class="font-semibold"></span></div>
+                    <div class="flex justify-between"><span>Recibido:</span> <span id="rec-monto" class="font-bold text-slate-900"></span></div>
+                    <div class="flex justify-between"><span>Interés:</span> <span id="rec-interes"></span></div>
+                    <div class="flex justify-between"><span>Capital:</span> <span id="rec-capital"></span></div>
+                </div>
+                <hr class="border-dashed border-slate-300">
+                <div class="bg-slate-50 p-2.5 rounded-lg flex justify-between items-center text-xs font-bold border border-slate-200 text-slate-900">
+                    <span>Nuevo Saldo:</span>
+                    <span id="rec-nuevo-saldo"></span>
+                </div>
+                <p class="text-[9px] text-center text-slate-500">¡Gracias por su pago puntual!</p>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="cerrarModalRecibo()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg font-semibold text-xs transition border border-slate-700">Cerrar</button>
+                <button onclick="compartirImagenReciboPorPlataformas()" class="w-1/2 bg-slate-200 hover:bg-white text-slate-950 py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 shadow-md">
+                    <i class="fa-solid fa-share-nodes"></i> Compartir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL OCULTO AVISO DE MORA -->
+    <div id="modal-aviso-mora-container" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="tarjeta-aviso-mora" class="bg-white p-4 rounded-xl border border-slate-300 text-slate-900 space-y-3 w-[350px] shadow-2xl relative text-center">
+            <div class="flex flex-col items-center justify-center gap-2 border-b border-slate-200 pb-2">
+                <div class="text-slate-700 text-xl p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="text-center w-full">
+                    <h2 class="font-bold text-xs text-rose-700 flex items-center justify-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> AVISO DE MORA</h2>
+                    <p class="text-[10px] text-slate-900 font-bold mt-0.5">Salazarr&asociados</p>
+                </div>
+            </div>
+            <div class="text-[11px] space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200 font-medium text-slate-800 text-center">
+                <div class="flex justify-between"><span>Cliente:</span> <span id="mora-card-cliente" class="font-bold text-slate-900">--</span></div>
+                <div class="flex justify-between"><span>Saldo Actual:</span> <span id="mora-card-saldo" class="font-bold text-slate-800">--</span></div>
+                <div class="flex justify-between"><span>Cuota Mensual:</span> <span id="mora-card-cuota" class="font-bold text-slate-900">--</span></div>
+                <div class="flex justify-between"><span>Días de Retraso:</span> <span id="mora-card-dias" class="font-bold text-rose-600">--</span></div>
+                <div class="flex justify-between border-t border-slate-200 pt-1"><span>Interés Moratorio:</span> <span id="mora-card-interes" class="font-bold text-rose-600">--</span></div>
+                <div class="flex justify-between"><span>Fecha:</span> <span id="mora-card-fecha" class="font-bold text-slate-700">--</span></div>
+            </div>
+            <p class="text-[9px] text-center text-slate-500">Por favor comuníquese para regularizar su cuenta.</p>
+        </div>
+    </div>
+
+    <!-- MODAL VISOR DOCUMENTOS -->
+    <div id="modal-visor-docs" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
+        <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-md w-full p-4 space-y-3 text-slate-100 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-xs uppercase text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-pdf text-rose-500"></i> Documentos Adjuntos
+                </h3>
+                <button onclick="cerrarModalVisorDocs()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <div id="contenido-visor-docs" class="space-y-2 max-h-[50vh] overflow-y-auto p-1"></div>
+            <div class="flex justify-end pt-1">
+                <button onclick="cerrarModalVisorDocs()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-semibold text-xs transition border border-slate-700">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MODIFICAR PRÉSTAMO -->
+    <div id="modal-modificar" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
+        <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-sm w-full p-4 space-y-3 text-slate-100 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-xs uppercase text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square text-slate-300"></i> Modificar Préstamo
+                </h3>
+                <button onclick="cerrarModalModificar()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            <input type="hidden" id="mod-id">
+
+            <div class="space-y-2.5">
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Nombre del Cliente</label>
+                    <input type="text" id="mod-cliente" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Teléfono</label>
+                        <input type="text" id="mod-telefono" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Saldo Actual ($)</label>
+                        <input type="number" step="0.01" id="mod-saldo" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none font-bold text-slate-200 text-center">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Tasa Mensual (%)</label>
+                        <input type="number" step="0.01" id="mod-tasa" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Capital Amort. ($)</label>
+                        <input type="number" step="0.01" id="mod-amortizado" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Dirección</label>
+                    <input type="text" id="mod-direccion" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-0.5 text-center">Garantía / Fiador</label>
+                    <input type="text" id="mod-garantia" class="w-full p-2 bg-slate-950 border border-slate-800 text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 focus:outline-none text-center">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+                <button onclick="cerrarModalModificar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg font-semibold text-xs transition border border-slate-700">Cancelar</button>
+                <button onclick="guardarModificacionPrestamo()" class="w-1/2 bg-slate-200 hover:bg-white text-slate-950 py-2 font-bold text-xs transition shadow-md">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        let prestamos = JSON.parse(localStorage.getItem('kashflow_prestamos')) || [];
+        let historialPagos = JSON.parse(localStorage.getItem('kashflow_pagos')) || [];
+
+        document.getElementById('nuevo-fecha').valueAsDate = new Date();
+        document.getElementById('pago-fecha').valueAsDate = new Date();
+
+        function guardarDatos() {
+            localStorage.setItem('kashflow_prestamos', JSON.stringify(prestamos));
+            localStorage.setItem('kashflow_pagos', JSON.stringify(historialPagos));
+            actualizarDashboard();
+            renderCartera();
+            renderHistorialPagos();
+            renderAlertas();
+            poblarSelectClientes();
+        }
+
+        function cambiarTab(tab) {
+            ['dashboard', 'prestamos', 'clientes', 'nuevo', 'pagos'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}`).classList.remove('bg-slate-200', 'text-slate-950', 'font-bold', 'shadow-md');
+                document.getElementById(`btn-${t}`).classList.add('text-slate-300');
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`btn-${tab}`).classList.add('bg-slate-200', 'text-slate-950', 'font-bold', 'shadow-md');
+            document.getElementById(`btn-${tab}`).classList.remove('text-slate-300');
+
+            if(tab === 'nuevo') calcularPrevia();
+            if(tab === 'clientes') poblarSelectClientes();
+        }
+
+        let documentosTemporalesNuevos = [];
+
+        function mostrarArchivosSeleccionados() {
+            const inputFiles = document.getElementById('nuevo-documentos');
+            const contenedor = document.getElementById('lista-archivos-adjuntos');
+            documentosTemporalesNuevos = [];
+            if(inputFiles.files.length > 0) {
+                let nombres = [];
+                for(let i = 0; i < inputFiles.files.length; i++) {
+                    let file = inputFiles.files[i];
+                    let fileURL = URL.createObjectURL(file);
+                    documentosTemporalesNuevos.push({ nombre: file.name, url: fileURL });
+                    nombres.push(file.name);
+                }
+                contenedor.innerText = `${inputFiles.files.length} archivo(s): ${nombres.join(', ')}`;
+            } else {
+                contenedor.innerText = 'Ningún documento adjunto';
+            }
+        }
+
+        function calcularCuotaFrancesa(monto, tasaMensualDecimal, plazoMeses) {
+            if (tasaMensualDecimal === 0) return monto / plazoMeses;
+            return monto * (tasaMensualDecimal * Math.pow(1 + tasaMensualDecimal, plazoMeses)) / (Math.pow(1 + tasaMensualDecimal, plazoMeses) - 1);
+        }
+
+        let tablaAmortizacionCache = [];
+
+        function calcularPrevia() {
+            const cliente = document.getElementById('nuevo-cliente').value.trim();
+            const monto = parseFloat(document.getElementById('nuevo-monto').value) || 0;
+            const tasa = parseFloat(document.getElementById('nuevo-tasa').value) || 0;
+            const plazo = parseInt(document.getElementById('nuevo-plazo').value) || 0;
+            const fechaStr = document.getElementById('nuevo-fecha').value || new Date().toISOString().split('T')[0];
+
+            let tbody = document.getElementById('tabla-amortizacion-previa');
+
+            if (!cliente && monto <= 0 && tasa <= 0 && plazo <= 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic"></td></tr>`;
+                document.getElementById('img-titulo-cliente').innerHTML = `<strong>Cliente:</strong> `;
+                document.getElementById('img-sub-monto').innerHTML = `<strong>Monto:</strong> `;
+                document.getElementById('img-tasa-inline').innerHTML = `<strong>Tasa de Interés:</strong> `;
+                document.getElementById('img-cuota-fija-inline').innerHTML = `<strong>Cuota Mensual Fija:</strong> `;
+                document.getElementById('img-total-intereses-inline').innerHTML = `<strong>Total Intereses:</strong> `;
+                return;
+            }
+
+            if (monto <= 0 || tasa <= 0 || plazo <= 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-slate-400 italic">Complete los campos de la izquierda...</td></tr>`;
+                document.getElementById('img-titulo-cliente').innerHTML = `<strong>Cliente:</strong> ${cliente}`;
+                document.getElementById('img-sub-monto').innerHTML = `<strong>Monto:</strong> $${monto.toFixed(2)}`;
+                document.getElementById('img-tasa-inline').innerHTML = `<strong>Tasa de Interés:</strong> ${tasa}% mensual`;
+                document.getElementById('img-cuota-fija-inline').innerHTML = `<strong>Cuota Mensual Fija:</strong> `;
+                document.getElementById('img-total-intereses-inline').innerHTML = `<strong>Total Intereses:</strong> `;
+                return;
+            }
+
+            const tasaDec = tasa / 100;
+            const cuotaFija = calcularCuotaFrancesa(monto, tasaDec, plazo);
+            let saldoPendiente = monto;
+            let totalInteresAcumulado = 0;
+
+            tbody.innerHTML = '';
+            tablaAmortizacionCache = [];
+
+            let fechaDesembolso = new Date(fechaStr + 'T00:00:00');
+            let trDesembolso = document.createElement('tr');
+            trDesembolso.className = 'border-b border-slate-200 bg-slate-50';
+            trDesembolso.innerHTML = `
+                <td class="p-2 font-bold text-slate-400 text-center">-</td>
+                <td class="p-2 text-slate-600 text-center">${formatearFechaDDMMYYYY(fechaDesembolso)}</td>
+                <td class="p-2 text-slate-500 italic text-center">Desembolso</td>
+                <td class="p-2 text-slate-400 text-center">-</td>
+                <td class="p-2 text-slate-400 text-center">-</td>
+                <td class="p-2 font-bold text-slate-900 text-center">$${monto.toFixed(2)}</td>
+            `;
+            tbody.appendChild(trDesembolso);
+
+            let fechaPagoBase = new Date(fechaStr + 'T00:00:00');
+
+            for (let i = 1; i <= plazo; i++) {
+                fechaPagoBase.setMonth(fechaPagoBase.getMonth() + 1);
+                let interesMes = saldoPendiente * tasaDec;
+                let abonoCapital = cuotaFija - interesMes;
+                
+                if (i === plazo) abonoCapital = saldoPendiente;
+
+                saldoPendiente = Math.max(0, saldoPendiente - abonoCapital);
+                totalInteresAcumulado += interesMes;
+
+                let filaObj = {
+                    cuota: i,
+                    fecha: formatearFechaDDMMYYYY(new Date(fechaPagoBase)),
+                    cuotaFija: (abonoCapital + interesMes),
+                    interesMes: interesMes,
+                    abonoCapital: abonoCapital,
+                    deudaPendiente: saldoPendiente
+                };
+                tablaAmortizacionCache.push(filaObj);
+
+                let tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-slate-800 text-center">${i}</td>
+                    <td class="p-2 text-slate-600 text-center">${filaObj.fecha}</td>
+                    <td class="p-2 font-semibold text-slate-800 text-center">$${filaObj.cuotaFija.toFixed(2)}</td>
+                    <td class="p-2 text-slate-600 text-center">$${filaObj.interesMes.toFixed(2)}</td>
+                    <td class="p-2 text-slate-800 text-center">$${filaObj.abonoCapital.toFixed(2)}</td>
+                    <td class="p-2 font-bold text-slate-900 text-center">$${filaObj.deudaPendiente.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('img-titulo-cliente').innerHTML = `<strong>Cliente:</strong> ${cliente}`;
+            document.getElementById('img-sub-monto').innerHTML = `<strong>Monto:</strong> $${monto.toFixed(2)}`;
+            document.getElementById('img-tasa-inline').innerHTML = `<strong>Tasa de Interés:</strong> ${tasa}% mensual`;
+            document.getElementById('img-cuota-fija-inline').innerHTML = `<strong>Cuota Mensual Fija:</strong> $${cuotaFija.toFixed(2)}`;
+            document.getElementById('img-total-intereses-inline').innerHTML = `<strong>Total Intereses:</strong> $${totalInteresAcumulado.toFixed(2)}`;
+        }
+
+        function formatearFechaDDMMYYYY(date) {
+            let d = String(date.getDate()).padStart(2, '0');
+            let m = String(date.getMonth() + 1).padStart(2, '0');
+            let y = date.getFullYear();
+            return `${d}-${m}-${y}`;
+        }
+
+        function parseYMDtoDDMMYYYY(fechaStr) {
+            if(!fechaStr) return '';
+            if(fechaStr.includes('-') && fechaStr.split('-')[0].length === 4) {
+                let p = fechaStr.split('-');
+                return `${p[2]}-${p[1]}-${p[0]}`;
+            }
+            return fechaStr;
+        }
+
+        function enviarImagenPorPlataformas() {
+            const elemento = document.getElementById('captura-tabla-container');
+            const cliente = document.getElementById('nuevo-cliente').value || 'Cliente';
+            const telefono = document.getElementById('nuevo-telefono').value || '';
+            const monto = document.getElementById('nuevo-monto').value || '0';
+
+            html2canvas(elemento, { scale: 2, backgroundColor: '#ffffff', logging: false, windowWidth: elemento.scrollWidth, windowHeight: elemento.scrollHeight }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `Estructura_${cliente.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({ title: 'Estructura - Salazarr&asociados', text: `Estimado/a ${cliente}, adjunto la estructura de su préstamo por $${monto}.`, files: [file] }).catch(() => {
+                            procesarFallbackImagen(canvas, cliente, telefono, monto);
+                        });
+                    } else {
+                        procesarFallbackImagen(canvas, cliente, telefono, monto);
+                    }
+                }, 'image/png');
+            });
+        }
+
+        function procesarFallbackImagen(canvas, cliente, telefono, monto) {
+            const link = document.createElement('a');
+            link.download = `Estructura_${cliente.replace(/\s+/g, '_')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            let opcion = prompt("✅ ¡Imagen generada con éxito!\n\n¿Por qué plataforma deseas enviarla?\n1. Escribe 'ws' para WhatsApp.\n2. Escribe 'correo' para correo electrónico.", "ws");
+            if (opcion && opcion.toLowerCase().includes('correo')) {
+                const subject = encodeURIComponent(`Estructura de Préstamo - ${cliente}`);
+                const body = encodeURIComponent(`Estimado/a ${cliente},\n\nAdjunto encontrará la imagen con la estructura completa de su préstamo por $${monto}.\n\nAtentamente,\nSalazarr&asociados`);
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            } else {
+                const mensaje = encodeURIComponent(`Hola *${cliente}*, le compartimos la estructura de su préstamo por *$${monto} USD* de *Salazarr&asociados*.`);
+                window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent(telefono)}&text=${mensaje}`, '_blank');
+            }
+        }
+
+        function enviarEstadoCuentaPorPlataformas() {
+            const idPrestamo = document.getElementById('select-cliente-historial').value;
+            const p = prestamos.find(x => x.id === idPrestamo);
+            if(!p) return;
+
+            const tasaDec = p.tasa / 100;
+            const cuotaFija = calcularCuotaFrancesa(p.montoOriginal, tasaDec, p.plazo);
+            let saldoTemp = p.montoOriginal;
+            let fechaPagoBase = new Date(p.fechaInicio + 'T00:00:00');
+            const pagosPrestamo = historialPagos.filter(tx => tx.idPrestamo === p.id);
+
+            document.getElementById('ec-img-titulo-cliente').innerHTML = `<strong>Cliente:</strong> ${p.cliente}`;
+            document.getElementById('ec-img-sub-monto').innerHTML = `<strong>Monto Original:</strong> $${p.montoOriginal.toFixed(2)}`;
+            document.getElementById('ec-img-tasa-inline').innerHTML = `<strong>Tasa de Interés:</strong> ${p.tasa}% mensual`;
+            document.getElementById('ec-img-cuota-fija-inline').innerHTML = `<strong>Cuota Mensual Fija:</strong> $${cuotaFija.toFixed(2)}`;
+            document.getElementById('ec-img-saldo-inline').innerHTML = `<strong>Saldo Pendiente:</strong> $${p.saldoActual.toFixed(2)}`;
+
+            let tbodyImg = document.getElementById('ec-tabla-amortizacion-imagen');
+            tbodyImg.innerHTML = '';
+
+            for (let i = 1; i <= p.plazo; i++) {
+                fechaPagoBase.setMonth(fechaPagoBase.getMonth() + 1);
+                let interesMes = saldoTemp * tasaDec;
+                let abonoCapital = cuotaFija - interesMes;
+                if (i === p.plazo) abonoCapital = saldoTemp;
+                saldoTemp = Math.max(0, saldoTemp - abonoCapital);
+
+                let cuotaCancelada = pagosPrestamo.some(tx => tx.abonoCapital > 0 && i <= pagosPrestamo.length);
+                let estadoBadge = cuotaCancelada ? `<span class="px-1.5 py-0.5 bg-slate-200 text-slate-800 rounded font-bold text-[9px]">CANCELADA</span>` : `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-bold text-[9px]">PENDIENTE</span>`;
+
+                let tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-slate-800 text-center">${i}</td>
+                    <td class="p-2 text-slate-700 text-center">${formatearFechaDDMMYYYY(new Date(fechaPagoBase))}</td>
+                    <td class="p-2 font-semibold text-slate-900 text-center">$${cuotaFija.toFixed(2)}</td>
+                    <td class="p-2 text-slate-700 text-center">$${interesMes.toFixed(2)}</td>
+                    <td class="p-2 text-slate-800 text-center">$${abonoCapital.toFixed(2)}</td>
+                    <td class="p-2 font-bold text-slate-900 text-center">$${saldoTemp.toFixed(2)}</td>
+                    <td class="p-2 text-center">${estadoBadge}</td>
+                `;
+                tbodyImg.appendChild(tr);
+            }
+
+            const elemento = document.getElementById('captura-estado-cuenta-container');
+            elemento.style.position = 'fixed';
+            elemento.style.left = '0';
+            elemento.style.top = '0';
+            elemento.style.zIndex = '-9999';
+
+            html2canvas(elemento, { scale: 2, backgroundColor: '#ffffff', logging: false, windowWidth: elemento.scrollWidth, windowHeight: elemento.scrollHeight }).then(canvas => {
+                elemento.style.position = 'absolute';
+                elemento.style.left = '-9999px';
+                elemento.style.top = '-9999px';
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `Estado_Cuenta_${p.cliente.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({ title: 'Estado de Cuenta', text: `Estimado/a ${p.cliente}, adjunto su estado de cuenta actualizado.`, files: [file] }).catch(() => {
+                            procesarFallbackEstadoCuenta(canvas, p);
+                        });
+                    } else {
+                        procesarFallbackEstadoCuenta(canvas, p);
+                    }
+                }, 'image/png');
+            });
+        }
+
+        function procesarFallbackEstadoCuenta(canvas, p) {
+            const link = document.createElement('a');
+            link.download = `Estado_Cuenta_${p.cliente.replace(/\s+/g, '_')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            let opcion = prompt("✅ ¡Estado de Cuenta generado como imagen!\n\n¿Por qué plataforma deseas enviarla?\n1. Escribe 'ws' para WhatsApp.\n2. Escribe 'correo' para correo electrónico.", "ws");
+            if (opcion && opcion.toLowerCase().includes('correo')) {
+                const subject = encodeURIComponent(`Estado de Cuenta - ${p.cliente}`);
+                const body = encodeURIComponent(`Estimado/a ${p.cliente},\n\nAdjuntamos la imagen con el estado de cuenta actualizado (Saldo actual: $${p.saldoActual.toFixed(2)}).\n\nAtentamente,\nSalazarr&asociados`);
+                window.location.href = `mailto:${p.telefono || ''}?subject=${subject}&body=${body}`;
+            } else {
+                const mensaje = encodeURIComponent(`Hola *${p.cliente}*, le compartimos su estado de cuenta actualizado de *Salazarr&asociados* (Saldo pendiente: *$${p.saldoActual.toFixed(2)} USD*).`);
+                window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent(p.telefono)}&text=${mensaje}`, '_blank');
+            }
+        }
+
+        function enviarAvisoMoraPorPlataformas(idPrestamo) {
+            const p = prestamos.find(x => x.id === idPrestamo);
+            if(!p) return;
+
+            const hoy = new Date();
+            const venc = new Date(p.proximoVencimiento + 'T00:00:00');
+            const diffDays = Math.ceil((hoy - venc) / (1000 * 60 * 60 * 24));
+            const diasRetraso = diffDays > 0 ? diffDays : 0;
+            
+            const tasaDec = p.tasa / 100;
+            const cuotaNormal = calcularCuotaFrancesa(p.montoOriginal, tasaDec, p.plazo);
+            const totalMora = diasRetraso * (cuotaNormal * 0.02);
+
+            document.getElementById('mora-card-cliente').innerText = p.cliente;
+            document.getElementById('mora-card-saldo').innerText = '$' + p.saldoActual.toFixed(2);
+            document.getElementById('mora-card-cuota').innerText = '$' + cuotaNormal.toFixed(2);
+            document.getElementById('mora-card-dias').innerText = diasRetraso + ' días';
+            document.getElementById('mora-card-interes').innerText = '$' + totalMora.toFixed(2);
+            document.getElementById('mora-card-fecha').innerText = formatearFechaDDMMYYYY(hoy);
+
+            const elemento = document.getElementById('tarjeta-aviso-mora');
+
+            html2canvas(elemento, { scale: 2, backgroundColor: '#ffffff', logging: false, windowWidth: elemento.scrollWidth, windowHeight: elemento.scrollHeight }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `Aviso_Mora_${p.cliente.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({ title: 'Aviso de Mora', text: `Estimado/a ${p.cliente}, adjuntamos su aviso de mora.`, files: [file] }).catch(() => {
+                            procesarFallbackAvisoMora(canvas, p, diasRetraso, totalMora);
+                        });
+                    } else {
+                        procesarFallbackAvisoMora(canvas, p, diasRetraso, totalMora);
+                    }
+                }, 'image/png');
+            });
+        }
+
+        function procesarFallbackAvisoMora(canvas, p, diasRetraso, totalMora) {
+            const link = document.createElement('a');
+            link.download = `Aviso_Mora_${p.cliente.replace(/\s+/g, '_')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            let opcion = prompt("✅ ¡Aviso de Mora generado como imagen!\n\n¿Por qué plataforma deseas enviarla?\n1. Escribe 'ws' para WhatsApp.\n2. Escribe 'correo' para correo electrónico.", "ws");
+            if (opcion && opcion.toLowerCase().includes('correo')) {
+                const subject = encodeURIComponent(`Aviso de Mora - ${p.cliente}`);
+                const body = encodeURIComponent(`Estimado/a ${p.cliente},\n\nAdjuntamos los detalles de su cuenta en mora:\n- Saldo Actual: $${p.saldoActual.toFixed(2)}\n- Días de Retraso: ${diasRetraso} días\n- Interés Moratorio: $${totalMora.toFixed(2)}`);
+                window.location.href = `mailto:${p.telefono || ''}?subject=${subject}&body=${body}`;
+            } else {
+                const mensaje = encodeURIComponent(`⚠️ Hola *${p.cliente}*, le compartimos su aviso de mora:\n• Saldo Actual: $${p.saldoActual.toFixed(2)}\n• Días de Retraso: ${diasRetraso} días\n• Interés Moratorio: $${totalMora.toFixed(2)}`);
+                window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent(p.telefono)}&text=${mensaje}`, '_blank');
+            }
+        }
+
+        function compartirImagenReciboPorPlataformas() {
+            if(!ultimaTx) return;
+            const elemento = document.getElementById('recibo-printable');
+            const p = prestamos.find(x => x.id === ultimaTx.idPrestamo);
+            const telefono = p ? p.telefono : '';
+            const cliente = ultimaTx.cliente;
+            const monto = ultimaTx.montoRecibido;
+            const idTx = ultimaTx.idTx;
+
+            html2canvas(elemento, { scale: 2, backgroundColor: '#ffffff', logging: false, windowWidth: elemento.scrollWidth, windowHeight: elemento.scrollHeight }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `Comprobante_${idTx}.png`, { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({ title: 'Comprobante de Pago', text: `Estimado/a ${cliente}, adjunto comprobante de su pago por $${monto.toFixed(2)}.`, files: [file] }).catch(() => {
+                            procesarFallbackReciboImagen(canvas, cliente, telefono, monto, idTx);
+                        });
+                    } else {
+                        procesarFallbackReciboImagen(canvas, cliente, telefono, monto, idTx);
+                    }
+                }, 'image/png');
+            });
+        }
+
+        function procesarFallbackReciboImagen(canvas, cliente, telefono, monto, idTx) {
+            const link = document.createElement('a');
+            link.download = `Comprobante_${idTx}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            let opcion = prompt("✅ ¡Comprobante generado!\n\n¿Por qué plataforma deseas enviarla?\n1. Escribe 'ws' para WhatsApp.\n2. Escribe 'correo' para correo electrónico.", "ws");
+            if (opcion && opcion.toLowerCase().includes('correo')) {
+                const subject = encodeURIComponent(`Comprobante de Pago - ${idTx}`);
+                const body = encodeURIComponent(`Estimado/a ${cliente},\n\nAdjunto comprobante de su pago por $${monto.toFixed(2)} (Tx: ${idTx}).`);
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            } else {
+                const mensaje = encodeURIComponent(`🧾 Hola *${cliente}*, le compartimos el comprobante de su pago por *$${monto.toFixed(2)} USD* (Tx: *${idTx}*).`);
+                window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent(telefono)}&text=${mensaje}`, '_blank');
+            }
+        }
+
+        function guardarNuevoPrestamo() {
+            const cliente = document.getElementById('nuevo-cliente').value;
+            if(!cliente) {
+                alert('Por favor ingrese el nombre del cliente.');
+                return;
+            }
+            const nuevoId = 'PR-' + (1000 + prestamos.length + 1);
+            const monto = parseFloat(document.getElementById('nuevo-monto').value);
+            const fechaInicio = document.getElementById('nuevo-fecha').value;
+            const plazo = parseInt(document.getElementById('nuevo-plazo').value);
+
+            let f = new Date(fechaInicio + 'T00:00:00');
+            f.setMonth(f.getMonth() + 1);
+
+            const prestamoObj = {
+                id: nuevoId,
+                cliente: cliente,
+                telefono: document.getElementById('nuevo-telefono').value,
+                direccion: document.getElementById('nuevo-direccion').value,
+                garantia: document.getElementById('nuevo-garantia').value,
+                documentosAdjuntos: documentosTemporalesNuevos,
+                fechaInicio: fechaInicio,
+                plazo: plazo,
+                tasa: parseFloat(document.getElementById('nuevo-tasa').value),
+                montoOriginal: monto,
+                capitalAmortizado: 0,
+                interesCancelado: 0,
+                saldoActual: monto,
+                proximoVencimiento: f.toISOString().split('T')[0],
+                activo: true
+            };
+
+            prestamos.push(prestamoObj);
+            guardarDatos();
+            alert(`¡Préstamo ${nuevoId} creado con éxito!`);
+            cambiarTab('prestamos');
+        }
+
+        function toggleEstadoPrestamo(id) {
+            const p = prestamos.find(x => x.id === id);
+            if (!p) return;
+            p.activo = p.activo === undefined ? false : !p.activo;
+            guardarDatos();
+        }
+
+        function renderCartera() {
+            const tbody = document.getElementById('tabla-cartera');
+            tbody.innerHTML = '';
+            let listaFiltrada = prestamos;
+
+            if(listaFiltrada.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-500 italic text-xs">No hay registros.</td></tr>`;
+                return;
+            }
+
+            listaFiltrada.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                const esActivo = p.activo !== false;
+                tr.className = `transition border-b border-slate-800/60 ${esActivo ? 'hover:bg-slate-950/40' : 'bg-slate-950/80 text-slate-500'}`;
+                
+                let btnDocs = '';
+                if(p.documentosAdjuntos && p.documentosAdjuntos.length > 0) {
+                    btnDocs = `<button onclick="abrirVisorDocs('${p.id}')" title="Ver Documentos" class="bg-slate-800 text-slate-200 hover:bg-slate-200 hover:text-slate-950 p-1.5 rounded-lg transition"><i class="fa-solid fa-file-pdf"></i></button>`;
+                }
+
+                let badgeInactivo = !esActivo ? `<span class="text-[9px] bg-slate-800 text-slate-400 px-1 rounded ml-0.5">INACTIVO</span>` : '';
+                let btnOcultarInactivo = esActivo 
+                    ? `<button onclick="toggleEstadoPrestamo('${p.id}')" title="Inactivar" class="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white p-1.5 rounded-lg transition"><i class="fa-solid fa-eye-slash"></i></button>`
+                    : `<button onclick="toggleEstadoPrestamo('${p.id}')" title="Activar" class="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white p-1.5 rounded-lg transition"><i class="fa-solid fa-eye"></i></button>`;
+
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-slate-500 text-center">${index + 1}</td>
+                    <td class="p-2 text-center">
+                        <div class="font-bold text-slate-100">${p.id} ${badgeInactivo}</div>
+                        <div class="text-[10px] text-slate-400">${p.cliente}</div>
+                    </td>
+                    <td class="p-2 text-[10px] text-slate-300 text-center">${parseYMDtoDDMMYYYY(p.fechaInicio)}</td>
+                    <td class="p-2 text-[10px] text-slate-300 text-center">${p.plazo}m</td>
+                    <td class="p-2 text-[10px] font-semibold text-slate-200 text-center">${p.tasa}%</td>
+                    <td class="p-2 font-medium text-slate-200 text-center">$${p.montoOriginal.toFixed(2)}</td>
+                    <td class="p-2 text-slate-300 text-center">$${p.capitalAmortizado.toFixed(2)}</td>
+                    <td class="p-2 text-emerald-400 font-medium text-center">$${p.interesCancelado.toFixed(2)}</td>
+                    <td class="p-2 font-bold text-slate-100 text-center">$${p.saldoActual.toFixed(2)}</td>
+                    <td class="p-2 text-center space-x-0.5 whitespace-nowrap">
+                        ${btnDocs}
+                        <button onclick="abrirModalPago('${p.id}')" title="Cobrar" class="bg-slate-800 text-slate-200 hover:bg-slate-200 hover:text-slate-950 p-1.5 rounded-lg transition"><i class="fa-solid fa-cash-register"></i></button>
+                        <button onclick="abrirModalModificar('${p.id}')" title="Modificar" class="bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white p-1.5 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
+                        ${btnOcultarInactivo}
+                        <button onclick="eliminarPrestamo('${p.id}')" title="Eliminar" class="bg-rose-950/50 text-rose-400 hover:bg-rose-600 hover:text-white p-1.5 rounded-lg transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function poblarSelectClientes() {
+            const select = document.getElementById('select-cliente-historial');
+            select.innerHTML = '<option value="">-- Seleccione un cliente --</option>';
+            let mapClientes = {};
+            prestamos.forEach(p => { mapClientes[p.id] = p; });
+            Object.values(mapClientes).forEach(p => {
+                let opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.cliente} (${p.id})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function cargarEstadoCuentaCliente() {
+            const idPrestamo = document.getElementById('select-cliente-historial').value;
+            const contenedor = document.getElementById('contenedor-estado-cuenta');
+            const vacio = document.getElementById('vacio-estado-cuenta');
+
+            if(!idPrestamo) {
+                contenedor.classList.add('hidden');
+                vacio.classList.remove('hidden');
+                return;
+            }
+
+            const p = prestamos.find(x => x.id === idPrestamo);
+            if(!p) return;
+
+            document.getElementById('ec-nombre').innerText = p.cliente;
+            document.getElementById('ec-telefono').innerText = 'Tel: ' + (p.telefono || 'N/D');
+            document.getElementById('ec-direccion').innerText = 'Dir: ' + (p.direccion || 'N/D');
+            document.getElementById('ec-id').innerText = p.id;
+            document.getElementById('ec-monto').innerText = '$' + p.montoOriginal.toFixed(2);
+            document.getElementById('ec-tasa').innerText = p.tasa + '%';
+            document.getElementById('ec-saldo').innerText = '$' + p.saldoActual.toFixed(2);
+
+            const tbody = document.getElementById('tabla-pagos-cliente');
+            tbody.innerHTML = '';
+            const pagosPrestamo = historialPagos.filter(tx => tx.idPrestamo === p.id);
+
+            if(pagosPrestamo.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-3 text-center text-slate-500 italic">No registra pagos.</td></tr>`;
+            } else {
+                pagosPrestamo.forEach(tx => {
+                    let estadoCuotaBadge = `<span class="px-1.5 py-0.5 bg-slate-800 text-slate-200 border border-slate-700 rounded font-bold text-[9px]">CANCELADA</span>`;
+                    let tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-950/40 border-b border-slate-800/60';
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold text-slate-200 text-center">${tx.idTx}</td>
+                        <td class="p-2 text-slate-300 text-center">${parseYMDtoDDMMYYYY(tx.fecha)}</td>
+                        <td class="p-2 text-center"><span class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded font-medium text-[10px]">${tx.tipoPago}</span></td>
+                        <td class="p-2 font-bold text-slate-100 text-center">$${tx.montoRecibido.toFixed(2)}</td>
+                        <td class="p-2 text-slate-300 text-center">$${tx.interesCancelado.toFixed(2)}</td>
+                        <td class="p-2 text-slate-200 font-semibold text-center">$${tx.abonoCapital.toFixed(2)}</td>
+                        <td class="p-2 font-bold text-slate-100 text-center">$${tx.nuevoSaldo.toFixed(2)}</td>
+                        <td class="p-2 text-center">${estadoCuotaBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            vacio.classList.add('hidden');
+            contenedor.classList.remove('hidden');
+        }
+
+        function abrirVisorDocs(id) {
+            const p = prestamos.find(x => x.id === id);
+            if(!p || !p.documentosAdjuntos) return;
+            const contenedor = document.getElementById('contenido-visor-docs');
+            contenedor.innerHTML = '';
+            p.documentosAdjuntos.forEach(doc => {
+                let div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2.5 bg-slate-950 rounded-lg border border-slate-800 text-xs';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-rose-500 text-base"></i>
+                        <span class="font-medium text-slate-200 truncate max-w-[150px]">${doc.nombre}</span>
+                    </div>
+                    <div class="space-x-1">
+                        <a href="${doc.url}" target="_blank" class="px-2.5 py-1 bg-slate-200 hover:bg-white text-slate-950 font-bold rounded-lg text-[10px]">Ver</a>
+                        <a href="${doc.url}" download="${doc.nombre}" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px]">Descargar</a>
+                    </div>
+                `;
+                contenedor.appendChild(div);
+            });
+            document.getElementById('modal-visor-docs').classList.remove('hidden');
+        }
+
+        function cerrarModalVisorDocs() {
+            document.getElementById('modal-visor-docs').classList.add('hidden');
+        }
+
+        function filtrarCartera() {
+            const filtro = document.getElementById('buscador-cartera').value.toLowerCase();
+            const filas = document.getElementById('tabla-cartera').getElementsByTagName('tr');
+            for (let f of filas) {
+                f.style.display = f.innerText.toLowerCase().includes(filtro) ? '' : 'none';
+            }
+        }
+
+        let prestamoSeleccionadoModal = null;
+
+        function abrirModalPago(id) {
+            prestamoSeleccionadoModal = prestamos.find(p => p.id === id);
+            if(!prestamoSeleccionadoModal) return;
+
+            document.getElementById('pago-prestamo-id').value = id;
+            document.getElementById('modal-cliente').innerText = prestamoSeleccionadoModal.cliente;
+            document.getElementById('modal-saldo').innerText = '$' + prestamoSeleccionadoModal.saldoActual.toFixed(2);
+
+            const tasaDec = prestamoSeleccionadoModal.tasa / 100;
+            const cuotaNormal = calcularCuotaFrancesa(prestamoSeleccionadoModal.montoOriginal, tasaDec, prestamoSeleccionadoModal.plazo);
+            document.getElementById('modal-cuota-normal').innerText = '$' + cuotaNormal.toFixed(2);
+            document.getElementById('pago-monto-recibido').value = cuotaNormal.toFixed(2);
+
+            const hoy = new Date();
+            const venc = new Date(prestamoSeleccionadoModal.proximoVencimiento);
+            const diffDays = Math.ceil((hoy - venc) / (1000 * 60 * 60 * 24));
+            let diasRetraso = diffDays > 0 ? diffDays : 0;
+            let moraMonto = diasRetraso * (cuotaNormal * 0.02);
+
+            document.getElementById('modal-dias-retraso').innerText = diasRetraso + ' días';
+            document.getElementById('modal-mora-monto').innerText = '$' + moraMonto.toFixed(2);
+
+            simularDesglosePago();
+            document.getElementById('modal-pago').classList.remove('hidden');
+        }
+
+        function cerrarModalPago() {
+            document.getElementById('modal-pago').classList.add('hidden');
+        }
+
+        function simularDesglosePago() {
+            if(!prestamoSeleccionadoModal) return;
+            const montoRecibido = parseFloat(document.getElementById('pago-monto-recibido').value) || 0;
+            const tasaDec = prestamoSeleccionadoModal.tasa / 100;
+            const interesOrdinarioMes = prestamoSeleccionadoModal.saldoActual * tasaDec;
+
+            const hoy = new Date();
+            const venc = new Date(prestamoSeleccionadoModal.proximoVencimiento);
+            const diffDays = Math.ceil((hoy - venc) / (1000 * 60 * 60 * 24));
+            const cuotaNormal = calcularCuotaFrancesa(prestamoSeleccionadoModal.montoOriginal, tasaDec, prestamoSeleccionadoModal.plazo);
+            let mora = diffDays > 0 ? diffDays * (cuotaNormal * 0.02) : 0;
+
+            let remanente = montoRecibido;
+            let pagoMora = Math.min(remanente, mora);
+            remanente -= pagoMora;
+
+            let pagoInteres = Math.min(remanente, interesOrdinarioMes);
+            remanente -= pagoInteres;
+
+            let abonoCapital = Math.min(remanente, prestamoSeleccionadoModal.saldoActual);
+            let nuevoSaldo = Math.max(0, prestamoSeleccionadoModal.saldoActual - abonoCapital);
+
+            document.getElementById('desglose-mora').innerText = '$' + pagoMora.toFixed(2);
+            document.getElementById('desglose-interes').innerText = '$' + pagoInteres.toFixed(2);
+            document.getElementById('desglose-capital').innerText = '$' + abonoCapital.toFixed(2);
+            document.getElementById('desglose-nuevo-saldo').innerText = '$' + nuevoSaldo.toFixed(2);
+        }
+
+        function ejecutarPago() {
+            const montoRecibido = parseFloat(document.getElementById('pago-monto-recibido').value) || 0;
+            if(montoRecibido <= 0) {
+                alert('Ingrese un monto válido.');
+                return;
+            }
+
+            const tasaDec = prestamoSeleccionadoModal.tasa / 100;
+            const interesOrdinarioMes = prestamoSeleccionadoModal.saldoActual * tasaDec;
+
+            const hoy = new Date();
+            const venc = new Date(prestamoSeleccionadoModal.proximoVencimiento);
+            const diffDays = Math.ceil((hoy - venc) / (1000 * 60 * 60 * 24));
+            const cuotaNormal = calcularCuotaFrancesa(prestamoSeleccionadoModal.montoOriginal, tasaDec, prestamoSeleccionadoModal.plazo);
+            let mora = diffDays > 0 ? diffDays * (cuotaNormal * 0.02) : 0;
+
+            let remanente = montoRecibido;
+            let pagoMora = Math.min(remanente, mora);
+            remanente -= pagoMora;
+
+            let pagoInteres = Math.min(remanente, interesOrdinarioMes);
+            remanente -= pagoInteres;
+
+            let abonoCapital = Math.min(remanente, prestamoSeleccionadoModal.saldoActual);
+            
+            prestamoSeleccionadoModal.saldoActual -= abonoCapital;
+            prestamoSeleccionadoModal.capitalAmortizado += abonoCapital;
+            prestamoSeleccionadoModal.interesCancelado += pagoInteres;
+
+            let tipoPago = abonoCapital > (cuotaNormal - interesOrdinarioMes) ? 'Abono Capital' : 'Cuota Normal';
+
+            let fVenc = new Date(prestamoSeleccionadoModal.proximoVencimiento);
+            fVenc.setMonth(fVenc.getMonth() + 1);
+            prestamoSeleccionadoModal.proximoVencimiento = fVenc.toISOString().split('T')[0];
+
+            const txId = 'TX-' + Math.floor(100000 + Math.random() * 900000);
+            const fechaPago = document.getElementById('pago-fecha').value;
+
+            const transaccion = {
+                idTx: txId,
+                idPrestamo: prestamoSeleccionadoModal.id,
+                cliente: prestamoSeleccionadoModal.cliente,
+                fecha: fechaPago,
+                montoRecibido: montoRecibido,
+                interesCancelado: pagoInteres,
+                abonoCapital: abonoCapital,
+                tipoPago: tipoPago,
+                nuevoSaldo: prestamoSeleccionadoModal.saldoActual
+            };
+
+            historialPagos.unshift(transaccion);
+            guardarDatos();
+            cerrarModalPago();
+            mostrarReciboModal(transaccion);
+        }
+
+        let ultimaTx = null;
+        function mostrarReciboModal(tx) {
+            ultimaTx = tx;
+            document.getElementById('rec-id-tx').innerText = tx.idTx;
+            document.getElementById('rec-id-prestamo').innerText = tx.idPrestamo;
+            document.getElementById('rec-fecha').innerText = parseYMDtoDDMMYYYY(tx.fecha);
+            document.getElementById('rec-cliente').innerText = tx.cliente;
+            document.getElementById('rec-tipo').innerText = tx.tipoPago;
+            document.getElementById('rec-monto').innerText = '$' + tx.montoRecibido.toFixed(2);
+            document.getElementById('rec-interes').innerText = '$' + tx.interesCancelado.toFixed(2);
+            document.getElementById('rec-capital').innerText = '$' + tx.abonoCapital.toFixed(2);
+            document.getElementById('rec-nuevo-saldo').innerText = '$' + tx.nuevoSaldo.toFixed(2);
+
+            document.getElementById('modal-recibo').classList.remove('hidden');
+        }
+
+        function cerrarModalRecibo() {
+            document.getElementById('modal-recibo').classList.add('hidden');
+        }
+
+        function renderHistorialPagos() {
+            const tbody = document.getElementById('tabla-historial-pagos');
+            tbody.innerHTML = '';
+            if(historialPagos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500 italic text-xs">No hay transacciones registradas.</td></tr>`;
+                return;
+            }
+            historialPagos.forEach(tx => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-950/40 transition border-b border-slate-800/60 text-xs';
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-slate-100 text-center">${tx.idTx}</td>
+                    <td class="p-2 font-semibold text-slate-200 text-center">${tx.idPrestamo}</td>
+                    <td class="p-2 text-slate-300 text-center">${tx.cliente}</td>
+                    <td class="p-2 text-slate-400 text-center">${parseYMDtoDDMMYYYY(tx.fecha)}</td>
+                    <td class="p-2 font-bold text-slate-100 text-center">$${tx.montoRecibido.toFixed(2)}</td>
+                    <td class="p-2 text-slate-400 text-center">$${tx.interesCancelado.toFixed(2)}</td>
+                    <td class="p-2 text-slate-200 font-semibold text-center">$${tx.abonoCapital.toFixed(2)}</td>
+                    <td class="p-2 text-center"><span class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded text-[10px]">${tx.tipoPago}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function abrirModalModificar(id) {
+            const p = prestamos.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('mod-id').value = p.id;
+            document.getElementById('mod-cliente').value = p.cliente;
+            document.getElementById('mod-telefono').value = p.telefono;
+            document.getElementById('mod-saldo').value = p.saldoActual;
+            document.getElementById('mod-tasa').value = p.tasa;
+            document.getElementById('mod-amortizado').value = p.capitalAmortizado;
+            document.getElementById('mod-direccion').value = p.direccion;
+            document.getElementById('mod-garantia').value = p.garantia;
+            document.getElementById('modal-modificar').classList.remove('hidden');
+        }
+
+        function cerrarModalModificar() {
+            document.getElementById('modal-modificar').classList.add('hidden');
+        }
+
+        function guardarModificacionPrestamo() {
+            const id = document.getElementById('mod-id').value;
+            const p = prestamos.find(x => x.id === id);
+            if(!p) return;
+            p.cliente = document.getElementById('mod-cliente').value;
+            p.telefono = document.getElementById('mod-telefono').value;
+            p.saldoActual = parseFloat(document.getElementById('mod-saldo').value) || p.saldoActual;
+            p.tasa = parseFloat(document.getElementById('mod-tasa').value) || p.tasa;
+            p.capitalAmortizado = parseFloat(document.getElementById('mod-amortizado').value) || p.capitalAmortizado;
+            p.direccion = document.getElementById('mod-direccion').value;
+            p.garantia = document.getElementById('mod-garantia').value;
+            guardarDatos();
+            cerrarModalModificar();
+            alert('Préstamo modificado correctamente.');
+        }
+
+        function eliminarPrestamo(id) {
+            if(confirm(`¿Está seguro de eliminar el préstamo ${id}?`)) {
+                prestamos = prestamos.filter(x => x.id !== id);
+                guardarDatos();
+            }
+        }
+
+        function renderAlertas() {
+            const tbody = document.getElementById('tabla-alertas');
+            tbody.innerHTML = '';
+            let contadorAlertas = 0;
+            const hoy = new Date();
+
+            prestamos.forEach(p => {
+                if(p.saldoActual <= 0 || p.activo === false) return;
+                const venc = new Date(p.proximoVencimiento + 'T00:00:00');
+                const diffDays = Math.ceil((venc - hoy) / (1000 * 60 * 60 * 24));
+
+                if(diffDays <= 5) {
+                    contadorAlertas++;
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-950/40 transition border-b border-slate-800/60 text-xs';
+                    
+                    let estadoBadge = '';
+                    let btnAccion = '';
+
+                    if(diffDays < 0) {
+                        estadoBadge = `<span class="px-2 py-0.5 bg-rose-950 text-rose-400 border border-rose-800 rounded font-bold text-[10px]">Vencido (${Math.abs(diffDays)}d)</span>`;
+                        btnAccion = `
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="enviarAvisoMoraPorPlataformas('${p.id}')" title="Aviso Mora" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-lg font-medium transition text-[10px]"><i class="fa-solid fa-share-nodes"></i></button>
+                                <button onclick="abrirModalPago('${p.id}')" class="bg-slate-200 hover:bg-white text-slate-950 font-bold px-2.5 py-1 rounded-lg transition text-[10px]">Cobrar</button>
+                            </div>
+                        `;
+                    } else if(diffDays === 0) {
+                        estadoBadge = `<span class="px-2 py-0.5 bg-slate-800 text-slate-200 border border-slate-700 rounded font-bold text-[10px]">Vence hoy</span>`;
+                        btnAccion = `<button onclick="abrirModalPago('${p.id}')" class="bg-slate-200 hover:bg-white text-slate-950 font-bold px-2.5 py-1 rounded-lg transition text-[10px]">Cobrar</button>`;
+                    } else {
+                        estadoBadge = `<span class="px-2 py-0.5 bg-slate-900 text-slate-300 border border-slate-700 rounded font-semibold text-[10px]">En ${diffDays}d</span>`;
+                        btnAccion = `<button onclick="abrirModalPago('${p.id}')" class="bg-slate-200 hover:bg-white text-slate-950 font-bold px-2.5 py-1 rounded-lg transition text-[10px]">Cobrar</button>`;
+                    }
+
+                    const tasaDec = p.tasa / 100;
+                    const cuota = calcularCuotaFrancesa(p.montoOriginal, tasaDec, p.plazo);
+
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold text-slate-100 text-center">${p.cliente}</td>
+                        <td class="p-2 text-slate-200 font-semibold text-center">${p.id}</td>
+                        <td class="p-2 text-slate-300 text-center">${parseYMDtoDDMMYYYY(p.proximoVencimiento)}</td>
+                        <td class="p-2 font-bold text-slate-100 text-center">$${cuota.toFixed(2)}</td>
+                        <td class="p-2 text-center">${estadoBadge}</td>
+                        <td class="p-2 text-center">${btnAccion}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+
+            if(tbody.innerHTML === '') {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-slate-500 text-xs">No hay alertas activas en los próximos 5 días.</td></tr>`;
+            }
+
+            document.getElementById('dash-cuotas-vencidas').innerText = contadorAlertas;
+        }
+
+        function actualizarDashboard() {
+            let capitalColocado = 0;
+            let interesesCobrados = 0;
+            let activos = 0;
+
+            prestamos.forEach(p => {
+                if(p.saldoActual > 0 && p.activo !== false) {
+                    capitalColocado += p.saldoActual;
+                    activos++;
+                }
+                interesesCobrados += p.interesCancelado;
+            });
+
+            document.getElementById('dash-capital-calle').innerText = '$' + capitalColocado.toFixed(2);
+            document.getElementById('dash-intereses-cobrados').innerText = '$' + interesesCobrados.toFixed(2);
+            document.getElementById('dash-prestamos-activos').innerText = activos;
+        }
+
+        function exportarExcelEjecutivo() {
+            if (historialPagos.length === 0 && prestamos.length === 0) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+            let datosTx = historialPagos.map(t => ({
+                "ID Transacción": t.idTx, "ID Préstamo": t.idPrestamo, "Cliente": t.cliente, "Fecha": parseYMDtoDDMMYYYY(t.fecha),
+                "Monto Recibido ($)": Number(t.montoRecibido.toFixed(2)), "Interés ($)": Number(t.interesCancelado.toFixed(2)),
+                "Capital ($)": Number(t.abonoCapital.toFixed(2)), "Tipo": t.tipoPago, "Nuevo Saldo ($)": Number(t.nuevoSaldo.toFixed(2))
+            }));
+            let datosCartera = prestamos.map(p => ({
+                "ID": p.id, "Cliente": p.cliente, "Teléfono": p.telefono || "N/D", "Monto Orig. ($)": Number(p.montoOriginal.toFixed(2)),
+                "Saldo Actual ($)": Number(p.saldoActual.toFixed(2)), "Estado": p.activo !== false ? "ACTIVO" : "INACTIVO"
+            }));
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datosCartera), "Cartera");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datosTx), "Pagos");
+            XLSX.writeFile(wb, "Back_Up_Salazar_Asociados.xlsx");
+        }
+
+        function exportarPdfEjecutivo() {
+            let ventana = window.open('', '_blank');
+            let htmlContenido = `
+                <html>
+                <head>
+                    <title>Reporte - Salazarr&asociados</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; color: #111; padding: 15px; text-align: center; }
+                        h2, h3 { margin: 5px 0; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; text-align: center; }
+                        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Salazarr&asociados</h2>
+                    <p style="font-size: 11px; font-weight: bold;">Reporte General de Cartera</p>
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Cliente</th><th>Teléfono</th><th>Monto Orig.</th><th>Saldo Actual</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody>
+                            ${prestamos.map(p => `
+                                <tr>
+                                    <td><b>${p.id}</b></td><td>${p.cliente}</td><td>${p.telefono || 'N/D'}</td>
+                                    <td>$${p.montoOriginal.toFixed(2)}</td><td><b>$${p.saldoActual.toFixed(2)}</b></td>
+                                    <td>${p.activo !== false ? 'ACTIVO' : 'INACTIVO'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <script>window.onload = function() { window.print(); }<\/script>
+                </body>
+                </html>
+            `;
+            ventana.document.write(htmlContenido);
+            ventana.document.close();
+        }
+
+        actualizarDashboard();
+        renderCartera();
+        renderHistorialPagos();
+        renderAlertas();
+        poblarSelectClientes();
+        calcularPrevia();
+    </script>
+</body>
+</html>
